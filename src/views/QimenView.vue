@@ -9,8 +9,8 @@
             <div>干支：{{ panData.干支 }}</div>
             <div>節氣：{{ panData.節氣 }}</div>
             <div>排局：{{ panData.排局 }}</div>
-            <div v-for="item, key in panData.旬空">{{ key }}：{{ item }}</div>
-            <div v-for="item, key in panData.值符值使">{{ key }}：{{ item }}</div>
+            <div v-for="(item, key) in panData.旬空" :key="`xunkong-${key}`">{{ key }}：{{ item }}</div>
+            <div v-for="(item, key) in panData.值符值使" :key="`zhifu-${key}`">{{ key }}：{{ item }}</div>
         </div>
 
 
@@ -66,6 +66,16 @@ import { storeToRefs } from 'pinia';
 
 dayjs.locale('zh-cn');
 
+// 定义 panData 的类型接口
+interface PanDataType {
+    干支?: string;
+    節氣?: string;
+    排局?: string;
+    旬空?: Record<string, string>;
+    值符值使?: Record<string, string>;
+    [key: string]: any;
+}
+
 const dateValue = ref<Dayjs>();
 const timeValue = ref<Dayjs>();
 const store = useQimenStore();
@@ -76,10 +86,11 @@ function paipan() {
     if(dateValue.value){
         const date = dateValue.value;
         const time = timeValue.value;
-        store.setPanData(new Qimen(date.year(), date.month()+1, date.date(), time.hour()).p);
+        store.setPanData(new Qimen(date.year(), date.month()+1, date.date(), time?.hour() || 0).p);
     }else{
         store.setPanData(new Qimen(2023, 12, 24, 6).p);
     }
+    console.log(store.panData)
 }
 
 </script>

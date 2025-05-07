@@ -43,6 +43,7 @@ class Qimen {
         驛馬: this.hourhorse(),
       },
       長生運: this.gong_chengsun(),
+      地支: this.dizhi_pan(),
     };
     this.g = this.gpan();
     this.overall = { 時家奇門: this.pan, 金函玉鏡: this.g };
@@ -659,8 +660,24 @@ class Qimen {
       神: this.getgtw()[dgz.split("")[0]],
     };
   }
+  dizhi_pan() {
+    let dizhi=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
+    let eight_gua2=['坎','艮','震','巽','離','坤','兌','乾']
+    let dizhi_pan = {
+      '坎': ['子'],
+      '艮': ['丑', '寅'],
+      '震': ['卯'],
+      '巽': ['辰', '巳'],
+      '離': ['午'],
+      '坤': ['未', '申'],
+      '兌': ['酉'],
+      '乾': ['戌', '亥']
+    }
+    
+    return dizhi_pan
+  }
 }
 
-// console.log(JSON.stringify(new Qimen(2021, 12, 02, 00).p));
-//console.log(new Lunar(2021, 11, 29).getTZ());
+const qimen = new Qimen(2023, 5, 15, 10);
+console.log(qimen.overall);
 export default Qimen;

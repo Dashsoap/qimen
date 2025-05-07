@@ -20,6 +20,9 @@ export const useQimenStore = defineStore('qimenpan', () => {
           天盘1: panData.value['天盤'][1][bagua],
           地盘: panData.value['地盤'][bagua],
           暗干: panData.value['暗干'][bagua],
+          馬星: panData.value['馬星']['驛馬'],
+          地支: panData.value['地支'][bagua],
+          旬空: panData.value['旬空']['時空'],
         }
       } else {
         return {}
