@@ -1,40 +1,3 @@
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import { ref } from 'vue'
-
-const menuActive = ref(false)
-const toggleMenu = () => {
-  menuActive.value = !menuActive.value
-}
-</script>
-
-<template>
-  <header class="header-nav">
-    <div class="nav-container">
-      <div class="logo">
-        <span>鬼谷奇门</span>
-      </div>
-
-      <div class="menu-toggle" @click="toggleMenu" :class="{ active: menuActive }">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-
-      <nav class="nav-links" :class="{ active: menuActive }">
-        <RouterLink to="/home" active-class="active">首页</RouterLink>
-        <RouterLink to="/qimen" active-class="active">奇门</RouterLink>
-        <RouterLink to="/about" active-class="active">关于</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <div class="router-view-container">
-    <RouterView />
-  </div>
-</template>
-
-<style>
 /* 导航栏基本样式 */
 .header-nav {
   position: fixed;
@@ -75,6 +38,11 @@ const toggleMenu = () => {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.nav-links li {
+  margin: 0;
+  position: relative;
 }
 
 .nav-links a {
@@ -127,19 +95,12 @@ const toggleMenu = () => {
   transition: all 0.3s ease;
 }
 
-/* 路由视图容器，防止内容被fixed header遮挡 */
-.router-view-container {
-  margin-top: 65px;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
 /* 移动端适配 */
 @media screen and (max-width: 767px) {
   .menu-toggle {
     display: flex;
   }
-
+  
   .nav-links {
     position: absolute;
     top: 100%;
@@ -153,32 +114,34 @@ const toggleMenu = () => {
     transition: max-height 0.5s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
-
+  
   .nav-links.active {
     max-height: 300px;
   }
-
-  .nav-links a {
+  
+  .nav-links li {
     width: 100%;
     text-align: center;
+  }
+  
+  .nav-links a {
     padding: 1rem;
   }
-
+  
   .nav-links a::after {
     bottom: 5px;
   }
-
+  
   /* 汉堡菜单动画 */
   .menu-toggle.active span:nth-child(1) {
     transform: translateY(9px) rotate(45deg);
   }
-
+  
   .menu-toggle.active span:nth-child(2) {
     opacity: 0;
   }
-
+  
   .menu-toggle.active span:nth-child(3) {
     transform: translateY(-9px) rotate(-45deg);
   }
-}
-</style>
+} 

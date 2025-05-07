@@ -1,0 +1,14 @@
+/* 手机设备 */
+@media only screen and (max-width: 767px) {
+  /* 在这里编写手机版样式 */
+}
+
+/* 平板设备 */
+@media only screen and (min-width: 768px) and (max-width: 1023px) {
+  /* 在这里编写平板版样式 */
+}
+
+/* 桌面设备 */
+@media only screen and (min-width: 1024px) {
+  /* 在这里编写桌面版样式 */
+} 

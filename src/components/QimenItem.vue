@@ -28,7 +28,15 @@
          <span v-if="formatHorseInfo(viewData)" :class="['horse-indicator', getHorseIndicatorPosition()]">{{ formatHorseInfo(viewData) }}</span>
     </div>
     <!-- 添加马星信息展示部分 -->
-
+    <div class="qimen-item">
+        <!-- 示例结构 -->
+        <span class="qimen-char gong-name" v-if="gongName">{{ gongName }}</span>
+        <span class="qimen-char tian-gan" v-if="tianGan">{{ tianGan }}</span>
+        <span class="qimen-char di-zhi" v-if="diZhi">{{ diZhi }}</span>
+        <span class="qimen-char shen-sha" v-if="shenSha">{{ shenSha }}</span>
+        <span class="qimen-char star" v-if="star">{{ star }}</span>
+        <span class="qimen-char men" v-if="men">{{ men }}</span>
+    </div>
 </template>
 
 <script setup>
@@ -244,6 +252,34 @@ function getFontColor(type, value) {
 .label {
     font-weight: bold;
     margin-right: 5px;
+}
+
+/* 在QimenItem组件中添加 */
+.palace-item {
+  position: relative;
+  margin: 3px;
+  transition: all 0.3s ease;
+}
+
+/* 驿马星特殊效果 */
+.palace-item.yi-ma {
+  color: #ffee58 !important; 
+  text-shadow: 0 0 8px rgba(255, 238, 88, 0.7) !important;
+  font-weight: bold !important;
+  position: relative;
+  z-index: 2;
+}
+
+.palace-item.yi-ma::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background-color: rgba(50, 40, 0, 0.3);
+  border-radius: 3px;
+  z-index: -1;
 }
 </style>
   
