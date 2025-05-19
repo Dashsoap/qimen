@@ -80,35 +80,35 @@
       <div class="bagua-background"></div>
       <table class="qimen-table">
         <tr class="row">
-          <td class="col palace" data-name="坎宫">
+          <td class="col palace" data-name="坎宫" @click="showPalaceInfo('坎宫')">
             <QimenItem index="四" />
           </td>
-          <td class="col palace" data-name="艮宫">
+          <td class="col palace" data-name="艮宫" @click="showPalaceInfo('艮宫')">
             <QimenItem index="九" />
           </td>
-          <td class="col palace" data-name="震宫">
+          <td class="col palace" data-name="震宫" @click="showPalaceInfo('震宫')">
             <QimenItem index="二" />
           </td>
         </tr>
         <tr class="row">
-          <td class="col palace" data-name="坤宫">
+          <td class="col palace" data-name="坤宫" @click="showPalaceInfo('坤宫')">
             <QimenItem index="三" />
           </td>
-          <td class="col palace center" data-name="中宫">
+          <td class="col palace center" data-name="中宫" @click="showPalaceInfo('中宫')">
             <QimenItem index="五" />
           </td>
-          <td class="col palace" data-name="巽宫">
+          <td class="col palace" data-name="巽宫" @click="showPalaceInfo('巽宫')">
             <QimenItem index="七" />
           </td>
         </tr>
         <tr class="row">
-          <td class="col palace" data-name="兑宫">
+          <td class="col palace" data-name="兑宫" @click="showPalaceInfo('兑宫')">
             <QimenItem index="八" />
           </td>
-          <td class="col palace" data-name="乾宫">
+          <td class="col palace" data-name="乾宫" @click="showPalaceInfo('乾宫')">
             <QimenItem index="一" />
           </td>
-          <td class="col palace" data-name="离宫">
+          <td class="col palace" data-name="离宫" @click="showPalaceInfo('离宫')">
             <QimenItem index="六" />
           </td>
         </tr>
@@ -121,6 +121,21 @@
 
     <!-- 添加一个底部空间 -->
     <div class="bottom-spacer"></div>
+
+    <!-- Add a meaning popup/modal -->
+    <div class="meaning-modal" v-if="infoStore.showMeaning" @click.self="infoStore.hideMeaning()">
+      <div class="meaning-content">
+        <div class="meaning-header">
+          <h3>{{ infoStore.displayName }}解释</h3>
+          <span class="close-btn" @click="infoStore.hideMeaning()">×</span>
+        </div>
+        <div class="meaning-body">
+          <!-- 根据内容类型使用不同的渲染方式 -->
+          <p v-if="!infoStore.isHtmlContent">{{ infoStore.currentMeaning }}</p>
+          <div v-else v-html="infoStore.currentMeaning"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -131,6 +146,7 @@ import dayjs from 'dayjs';
 import Qimen from '../qimendunjia/index.js'
 import QimenItem from '../components/QimenItem.vue'
 import { useQimenStore } from "../stores/index";
+import { useQimenInfoStore } from "../stores/qimenInfoStore";
 import { DatePicker, TimePicker } from 'ant-design-vue';
 import 'dayjs/locale/zh-cn';
 import type { Dayjs } from 'dayjs';
@@ -152,6 +168,7 @@ const dateValue = ref<Dayjs>();
 const timeValue = ref<Dayjs>();
 const questionValue = ref<string>('');
 const store = useQimenStore();
+const infoStore = useQimenInfoStore();
 
 const { panData } = storeToRefs(store);
 
@@ -208,7 +225,84 @@ const enhancedPaipan = () => {
   }, 1000);
 };
 
-// Add tap effects for mobile experience
+// New function to show palace info with all elements in it
+function showPalaceInfo(palaceName) {
+  // 首先获取这个宫位的数据
+  const bagua = palaceName.replace('宫', '');
+  const gongData = store.getGongViewData(bagua);
+  
+  // 构建包含该宫位所有元素解释的内容
+  let fullExplanation = `<h3>${palaceName}解释</h3>\n\n`;
+  fullExplanation += infoStore.palaceMeanings[palaceName] || '未找到宫位解释';
+  fullExplanation += '\n\n<hr>\n\n<h4>宫内元素详解：</h4>\n\n';
+  
+  // 添加八神解释
+  if (gongData.八神) {
+    const divineName = {
+      '符': '值符',
+      '蛇': '螣蛇',
+      '阴': '太阴',
+      '合': '六合',
+      '虎': '白虎',
+      '武': '玄武',
+      '地': '九地',
+      '天': '九天'
+    }[gongData.八神] || gongData.八神;
+    
+    fullExplanation += `<h5>八神·${gongData.八神}</h5>\n`;
+    fullExplanation += infoStore.palaceMeanings[divineName] || '未找到八神解释';
+    fullExplanation += '\n\n';
+  }
+  
+  // 添加九星解释
+  if (gongData.九星) {
+    const starName = '天' + gongData.九星;
+    fullExplanation += `<h5>九星·${gongData.九星}</h5>\n`;
+    fullExplanation += infoStore.palaceMeanings[starName] || '未找到九星解释';
+    fullExplanation += '\n\n';
+  }
+  
+  // 添加八门解释
+  if (gongData.八门) {
+    const gateName = gongData.八门 + '门';
+    fullExplanation += `<h5>八门·${gongData.八门}</h5>\n`;
+    fullExplanation += infoStore.palaceMeanings[gateName] || '未找到八门解释';
+    fullExplanation += '\n\n';
+  }
+  
+  // 添加天干解释
+  if (gongData.天盘) {
+    fullExplanation += `<h5>天干·${gongData.天盘}</h5>\n`;
+    fullExplanation += infoStore.palaceMeanings[gongData.天盘] || '未找到天干解释';
+    fullExplanation += '\n\n';
+  }
+  
+  // 添加地支解释
+  if (gongData.地盘) {
+    fullExplanation += `<h5>地支·${gongData.地盘}</h5>\n`;
+    fullExplanation += infoStore.palaceMeanings[gongData.地盘] || '未找到地支解释';
+    fullExplanation += '\n\n';
+  }
+  
+  // 获取被点击的单元格并添加视觉效果
+  const clickedCell = document.querySelector(`[data-name="${palaceName}"]`);
+  if (clickedCell) {
+    // 添加视觉效果
+    const cells = document.querySelectorAll('.col');
+    cells.forEach(c => c.classList.remove('tapped'));
+    clickedCell.classList.add('tapped');
+    
+    // 移除动画效果
+    setTimeout(() => {
+      clickedCell.classList.remove('tapped');
+    }, 800);
+  }
+  
+  // 使用自定义HTML内容显示宫位及其所有元素的解释
+  infoStore.showPalaceInfo(palaceName, fullExplanation);
+}
+
+// Modified addTapEffects to use our new function
 const addTapEffects = () => {
   // Add tap effect to button
   const button = document.querySelector('.dao-button');
@@ -221,22 +315,8 @@ const addTapEffects = () => {
     });
   }
 
-  // Add tap effects to cells
-  const cells = document.querySelectorAll('.col');
-  cells.forEach(cell => {
-    cell.addEventListener('click', function() {
-      // Remove tapped class from all cells
-      cells.forEach(c => c.classList.remove('tapped'));
-
-      // Add tapped class to this cell
-      this.classList.add('tapped');
-
-      // Remove tapped class after animation
-      setTimeout(() => {
-        this.classList.remove('tapped');
-      }, 800);
-    });
-  });
+  // We don't need to add click listeners here anymore as we've added them in template
+  // with @click="showPalaceInfo"
 };
 
 onMounted(() => {
@@ -861,5 +941,76 @@ onMounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Add styles for the meaning modal */
+.meaning-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.meaning-content {
+  background-color: rgba(10, 10, 10, 0.95);
+  border: 2px solid #d4af37;
+  border-radius: 2px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+.meaning-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #85754e;
+}
+
+.meaning-header h3 {
+  margin: 0;
+  color: #d4af37;
+  font-size: 20px;
+  letter-spacing: 4px;
+}
+
+.close-btn {
+  color: #85754e;
+  font-size: 24px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #d4af37;
+}
+
+.meaning-body {
+  padding: 20px;
+  color: #d4af37;
+  line-height: 1.7;
+  font-size: 16px;
+  text-align: justify;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 </style>

@@ -1,41 +1,57 @@
 <template>
     <div class="wrapper">
         <div class="wrapper-item">
-            <span>{{ viewData.暗干 }}</span>
-            <span>{{ viewData.八神 }}</span>
-            <span class="placeholder">空</span>
+            <span class="clickable-element" v-if="viewData.暗干" @click.stop="showElementInfo('天干', viewData.暗干)">{{ viewData.暗干 }}</span>
+            <span class="clickable-element" v-if="viewData.八神" @click.stop="showElementInfo('八神', viewData.八神)">{{ viewData.八神 }}</span>
+            <span class="placeholder" v-else>空</span>
         </div>
         <div class="wrapper-item">
             <span class="placeholder">空 </span>
-            <span :style="{ color: getFontColor('九星', viewData.九星) }">{{ simplifyText(viewData.九星) }}</span>
+            <span class="clickable-element" v-if="viewData.九星" 
+                  :style="{ color: getFontColor('九星', viewData.九星) }" 
+                  @click.stop="showElementInfo('九星', viewData.九星)">
+                {{ simplifyText(viewData.九星) }}
+            </span>
             <span class="placeholder">空</span>
         </div>
         <div class="wrapper-item">
             <span class="placeholder">空</span>
             <span class="placeholder">空</span>
-            <span v-if="viewData.八门" :style="{ color: getFontColor('八门', viewData.八门) }">{{ simplifyText(viewData.八门) }}</span>
+            <span class="clickable-element" v-if="viewData.八门" 
+                  :style="{ color: getFontColor('八门', viewData.八门) }" 
+                  @click.stop="showElementInfo('八门', viewData.八门)">
+                {{ simplifyText(viewData.八门) }}
+            </span>
             <span class="placeholder" v-if="!viewData.天盘1">空</span>
-            <span v-if="viewData.天盘1" :style="{ color: getFontColor('天干', viewData.天盘1) }">{{ viewData.天盘1 }}</span>
-            <span :style="{ color: getFontColor('天干', viewData.天盘) }">{{ viewData.天盘 }}</span>
-
+            <span class="clickable-element" v-if="viewData.天盘1" 
+                  :style="{ color: getFontColor('天干', viewData.天盘1) }" 
+                  @click.stop="showElementInfo('天干', viewData.天盘1)">
+                {{ viewData.天盘1 }}
+            </span>
+            <span class="clickable-element" v-if="viewData.天盘" 
+                  :style="{ color: getFontColor('天干', viewData.天盘) }" 
+                  @click.stop="showElementInfo('天干', viewData.天盘)">
+                {{ viewData.天盘 }}
+            </span>
         </div>
         <div class="wrapper-item">
             <span class="placeholder">符</span>
-            <span v-if="getKongWang(viewData)" class="kong-indicator">{{ getKongWang(viewData) }}</span>
-            <span :style="{ color: getFontColor('天干', viewData.地盘) }">{{ viewData.地盘 }}</span>
+            <span v-if="getKongWang(viewData)" class="kong-indicator clickable-element"
+                  @click.stop="showElementInfo('旬空', '旬空')">
+                {{ getKongWang(viewData) }}
+            </span>
+            <span class="clickable-element" v-if="viewData.地盘" 
+                  :style="{ color: getFontColor('地支', viewData.地盘) }" 
+                  @click.stop="showElementInfo('地支', viewData.地盘)">
+                {{ viewData.地盘 }}
+            </span>
         </div>
         <!-- 马星指示器 -->
-         <span v-if="formatHorseInfo(viewData)" :class="['horse-indicator', getHorseIndicatorPosition()]">{{ formatHorseInfo(viewData) }}</span>
-    </div>
-    <!-- 添加马星信息展示部分 -->
-    <div class="qimen-item">
-        <!-- 示例结构 -->
-        <span class="qimen-char gong-name" v-if="gongName">{{ gongName }}</span>
-        <span class="qimen-char tian-gan" v-if="tianGan">{{ tianGan }}</span>
-        <span class="qimen-char di-zhi" v-if="diZhi">{{ diZhi }}</span>
-        <span class="qimen-char shen-sha" v-if="shenSha">{{ shenSha }}</span>
-        <span class="qimen-char star" v-if="star">{{ star }}</span>
-        <span class="qimen-char men" v-if="men">{{ men }}</span>
+        <span v-if="formatHorseInfo(viewData)" 
+              :class="['horse-indicator', getHorseIndicatorPosition()]"
+              @click.stop="showElementInfo('马星', '马星')">
+            {{ formatHorseInfo(viewData) }}
+        </span>
     </div>
 </template>
 
@@ -43,53 +59,59 @@
 import { computed, defineProps, reactive } from "vue";
 import { useQimenStore } from "../stores/index";
 import Config from "../qimendunjia/config";
+import { useQimenInfoStore } from "../stores/qimenInfoStore";
+
 const props = defineProps(
     { index: String }
 );
 
 // 奇门盘数据
-const store = useQimenStore()
+const store = useQimenStore();
+const infoStore = useQimenInfoStore();
 const index = props.index;
 
 // 获取当前八卦方位
 const bagua = Config.gongs_code[index];
-const viewData =  store.getGongViewData(bagua);
+const viewData = store.getGongViewData(bagua);
 const dizhi_pan = {
-      '坎': ['子'],
-      '艮': ['丑', '寅'],
-      '震': ['卯'],
-      '巽': ['辰', '巳'],
-      '離': ['午'],
-      '坤': ['未', '申'],
-      '兌': ['酉'],
-      '乾': ['戌', '亥']
-    }
+    '坎': ['子'],
+    '艮': ['丑', '寅'],
+    '震': ['卯'],
+    '巽': ['辰', '巳'],
+    '離': ['午'],
+    '坤': ['未', '申'],
+    '兌': ['酉'],
+    '乾': ['戌', '亥']
+};
+
 // 格式化马星信息
 function formatHorseInfo(horseInfo) {
-    // console.log(horseInfo)
-    const ma = horseInfo['馬星']
-    if(!ma || !dizhi_pan[bagua]) return ''
-    return dizhi_pan[bagua].includes(ma) ? '🐎' :''
+    const ma = horseInfo['馬星'];
+    if(!ma || !dizhi_pan[bagua]) return '';
+    return dizhi_pan[bagua].includes(ma) ? '🐎' :'';
 }
 
+// 获取旬空信息
 function getKongWang(viewData){
-    const kongwang = viewData['旬空']
-    if(!kongwang || !dizhi_pan[bagua]) return ''
-    const kongwang_list = kongwang.split('')
+    const kongwang = viewData['旬空'];
+    if(!kongwang || !dizhi_pan[bagua]) return '';
+    const kongwang_list = kongwang.split('');
     // 如果dizhi包含kongwanglist中的一个则返回空
     if (dizhi_pan[bagua].some(dizhi => kongwang_list.includes(dizhi))) {
-        return 'O'
+        return 'O';
     }
-    return ''
+    return '';
 }
+
+// 获取马星位置样式
 function getHorseIndicatorPosition(){
     if(bagua) {
-        if(bagua=='乾') return 'qian'
-        if(bagua=='坤') return 'kun'
-        if(bagua=='艮') return 'geng'
-        if(bagua=='巽') return 'xun'
+        if(bagua=='乾') return 'qian';
+        if(bagua=='坤') return 'kun';
+        if(bagua=='艮') return 'geng';
+        if(bagua=='巽') return 'xun';
     }
-    return ''
+    return '';
 }
 
 // 五行颜色对照表
@@ -100,7 +122,7 @@ const wuxingColor = {
     火: '#bf403a',
     土: '#87561e',
 };
-console.log(index,viewData)
+
 // 繁体字转简体字映射
 const traditionalToSimplified = {
     // 八门
@@ -126,7 +148,7 @@ const traditionalToSimplified = {
     "天馬": "天马",
     "丁馬": "丁马",
     "驛馬": "驿马",
-    "空亡宫": "空亡宫",
+    "空亡宮": "空亡宫",
     "空亡": "空亡",
     // 其他可能需要转换的字符
 };
@@ -149,12 +171,21 @@ const wuxingMap = {
         "生": '土',
         "景": '火',
     },
-    八神: {},
+    八神: {
+        "符": '土',
+        "蛇": '火',
+        "阴": '金',
+        "合": '木',
+        "虎": '金',
+        "武": '水',
+        "地": '金',
+        "天": '金',
+    },
     九星: {
         "蓬": '水',
         "芮": '土',
         "冲": '木',
-        "辅": '木',
+        "辅": '土',
         "禽": '土',
         "心": '金',
         "柱": '金',
@@ -172,19 +203,99 @@ const wuxingMap = {
         辛: '金',
         壬: '水',
         癸: '水',
+    },
+    地支: {
+        "子": '水',
+        "丑": '土',
+        "寅": '木',
+        "卯": '木',
+        "辰": '土',
+        "巳": '火',
+        "午": '火',
+        "未": '土',
+        "申": '金',
+        "酉": '金',
+        "戌": '土',
+        "亥": '水',
     }
-}
+};
 
 /**
  * 根据类型和符号获取五行对应的颜色
- * @param {*} type 类型：八门、九星、天干 
+ * @param {*} type 类型：八门、九星、天干、地支等
  * @param {*} value 值
  */
 function getFontColor(type, value) {
     // 如果是繁体字，先转为简体字再查找
     const simplifiedValue = simplifyText(value);
-    const wuxing = wuxingMap[type][simplifiedValue];
-    return wuxingColor[wuxing];
+    const wuxing = wuxingMap[type]?.[simplifiedValue];
+    return wuxingColor[wuxing] || '#d4af37'; // 默认金色
+}
+
+/**
+ * 显示元素解释函数，确保正确匹配存储库中的键
+ */
+function showElementInfo(type, value) {
+    if (!value) return;
+    
+    // 八神简称到全称的映射
+    const divineMappings = {
+        '符': '值符',
+        '蛇': '螣蛇',
+        '阴': '太阴',
+        '合': '六合',
+        '虎': '白虎',
+        '武': '玄武',
+        '地': '九地',
+        '天': '九天'
+    };
+    
+    // 准备用于查找解释的键和显示名称
+    let elementName = value;
+    let displayName = value;
+    
+    // 根据元素类型格式化名称
+    switch(type) {
+        case '九星':
+            elementName = '天' + simplifyText(value);
+            displayName = '九星·天' + simplifyText(value);
+            break;
+        case '八门':
+            elementName = simplifyText(value) + '门';
+            displayName = '八门·' + simplifyText(value) + '门';
+            break;
+        case '八神':
+            // 使用映射表将简称转为全称，用于查找解释
+            elementName = divineMappings[simplifyText(value)] || simplifyText(value);
+            // 但在显示时仍使用简称，方便用户识别
+            displayName = '八神·' + simplifyText(value);
+            break;
+        case '天干':
+            displayName = '天干·' + value;
+            elementName = value; // 直接使用天干的值作为键
+            break;
+        case '地支':
+            displayName = '地支·' + value;
+            elementName = value; // 直接使用地支的值作为键
+            break;
+        case '马星':
+            displayName = '马星';
+            elementName = '马星';
+            break;
+        case '旬空':
+            displayName = '旬空';
+            elementName = '旬空';
+            break;
+    }
+    
+    // 调试信息，帮助排查问题
+    console.log(`查找解释: 类型=${type}, 值=${value}, 键=${elementName}, 显示=${displayName}`);
+    
+    // 确保事件不冒泡到父元素
+    event.stopPropagation();
+    
+    // 显示解释
+    infoStore.showPalaceMeaning(elementName, displayName);
 }
 </script>
   
@@ -280,6 +391,125 @@ function getFontColor(type, value) {
   background-color: rgba(50, 40, 0, 0.3);
   border-radius: 3px;
   z-index: -1;
+}
+
+/* Add styles for the meaning modal */
+.meaning-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.meaning-content {
+  background-color: rgba(10, 10, 10, 0.95);
+  border: 2px solid #d4af37;
+  border-radius: 2px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+.meaning-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #85754e;
+}
+
+.meaning-header h3 {
+  margin: 0;
+  color: #d4af37;
+  font-size: 20px;
+  letter-spacing: 4px;
+}
+
+.close-btn {
+  color: #85754e;
+  font-size: 24px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #d4af37;
+}
+
+.meaning-body {
+  padding: 20px;
+  color: #d4af37;
+  line-height: 1.7;
+  font-size: 16px;
+  text-align: justify;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Add styles for clickable elements */
+.gate, .star, .divine {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.gate:hover, .star:hover, .divine:hover {
+  color: #f6e27a;
+  text-shadow: 0 0 5px rgba(246, 226, 122, 0.6);
+}
+
+.clickable-element {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.clickable-element:hover {
+    color: #f6e27a !important;
+    text-shadow: 0 0 5px rgba(246, 226, 122, 0.6);
+    transform: scale(1.1);
+}
+
+.clickable-element::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background-color: #f6e27a;
+    transition: width 0.2s ease;
+}
+
+.clickable-element:hover::after {
+    width: 100%;
+}
+
+.horse-indicator {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.horse-indicator:hover {
+    transform: scale(1.2);
+    text-shadow: 0 0 8px rgba(246, 226, 122, 0.7);
 }
 </style>
   
