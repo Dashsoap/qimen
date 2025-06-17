@@ -205,5 +205,62 @@ Package.resolved
 # Temporary APK files on desktop
 ~/Desktop/*.apk
 鬼谷奇门*.apk
+
 # Mobile app directory (keep only source)
 qimen-mobile/
+
+# Additional temporary and generated files
+*.orig
+*.rej
+.eslintcache
+.stylelintcache
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Server logs and temporary files
+server.log
+test-login.html
+tmp-schema.prisma
+
+# TypeScript config files (project-specific)
+tsconfig.build.json
+tsconfig.paths.json
+
+# Webpack and build tools
+webpack-stats.json
+.webpack/
+
+# PM2 logs
+pm2.log
+
+# Storybook build outputs
+storybook-static/
+
+# Nuxt.js build / generate output
+.nuxt/
+
+# Gatsby files
+.cache/
+public/
+
+# VuePress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
