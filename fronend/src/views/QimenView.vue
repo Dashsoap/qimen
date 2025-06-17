@@ -345,13 +345,13 @@ onMounted(() => {
 
 </script>
 
-<style>
+<style scoped>
 /* Vibrant gold palette */
 .qimen-container {
   font-family: "FangSong", "STKaiti", "SimSun", serif;
   color: #d4af37; /* Richer gold color */
   background: #000000; /* Deeper black */
-  padding: 20px 15px 40px;
+  padding: 20px 15px 100px; /* 增加底部padding为底部导航留空间 */
   border-radius: 0;
   margin: 0;
   position: relative;
@@ -805,9 +805,8 @@ onMounted(() => {
 
 /* 底部空间样式 */
 .bottom-spacer {
-  height: 50px;
+  height: 20px;
   width: 100%;
-  margin-top: 30px;
 }
 
 /* Add a subtle circle animation to show tap point */
@@ -1013,4 +1012,5 @@ onMounted(() => {
   from { transform: translateY(-30px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
 </style>

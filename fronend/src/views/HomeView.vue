@@ -789,23 +789,13 @@ onMounted(() => {
   </div>
 </template>
 
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
+<style scoped>
+.scene-container {
+  position: relative;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   overflow: hidden;
   background: linear-gradient(to bottom, #000022, #000033, #000044);
-}
-
-.scene-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
 }
 
 canvas {
@@ -852,4 +842,8 @@ canvas {
     max-width: 90%;
   }
 }
+</style>
+
+<style>
+/* 移除全局body样式，改为只影响这个组件 */
 </style>
