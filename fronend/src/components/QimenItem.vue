@@ -118,7 +118,7 @@ function getHorseIndicatorPosition(){
 const wuxingColor = {
     金: '#f28413',
     木: '#167318',
-    水: '#08059c',
+    水: '#4499ff',
     火: '#bf403a',
     土: '#87561e',
 };

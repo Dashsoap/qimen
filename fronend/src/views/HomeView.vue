@@ -730,16 +730,43 @@ onMounted(() => {
         }, 0.5);
     });
     
-    // 同时改变光源颜色
-    explodeAnimation.to(pointLight1, {
-      duration: 0.5,
-      color: new THREE.Color(Math.random(), Math.random(), Math.random()),
-      intensity: 4,
-    }, 0).to(pointLight1, {
-      duration: 1,
-      intensity: 2,
-      delay: 0.5
-    }, 0.5);
+    // 同时改变光源颜色 - 修复颜色动画
+    const originalColor = { r: pointLight1.color.r, g: pointLight1.color.g, b: pointLight1.color.b };
+    const targetColor = { 
+      r: 0.5 + Math.random() * 0.5, // 确保颜色值在0.5-1之间，避免太暗
+      g: 0.5 + Math.random() * 0.5, 
+      b: 0.5 + Math.random() * 0.5 
+    };
+    
+    explodeAnimation
+      .to(pointLight1, {
+        duration: 0.5,
+        intensity: 4,
+      }, 0)
+      .to(targetColor, {
+        duration: 0.5,
+        r: targetColor.r,
+        g: targetColor.g,
+        b: targetColor.b,
+        onUpdate: () => {
+          pointLight1.color.setRGB(targetColor.r, targetColor.g, targetColor.b);
+        }
+      }, 0)
+      .to(pointLight1, {
+        duration: 1,
+        intensity: 2,
+        delay: 0.5
+      }, 0.5)
+      .to(originalColor, {
+        duration: 1,
+        r: originalColor.r,
+        g: originalColor.g,
+        b: originalColor.b,
+        delay: 0.5,
+        onUpdate: () => {
+          pointLight1.color.setRGB(originalColor.r, originalColor.g, originalColor.b);
+        }
+      }, 0.5);
   });
 
   // 渲染循环

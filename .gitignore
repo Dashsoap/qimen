@@ -100,3 +100,110 @@ generated/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Mobile Development (Cordova/Capacitor)
+# Cordova platforms and plugins
+qimen-mobile/platforms/
+qimen-mobile/plugins/
+qimen-mobile/node_modules/
+qimen-mobile/package-lock.json
+
+# Cordova build outputs
+qimen-mobile/www/
+*.apk
+*.ipa
+*.aab
+
+# Gradle (Android)
+*.gradle/
+.gradle/
+gradle-wrapper.jar
+gradle-wrapper.properties.bak
+local.properties
+
+# Android Studio
+*.iml
+.idea/
+.navigation/
+captures/
+output.json
+
+# iOS (Xcode)
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Capacitor
+.capacitor/
+capacitor.config.json.bak
+
+# Mobile app signing keys
+*.keystore
+*.p12
+*.mobileprovision
+
+# React Native (if used)
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Metro bundler (React Native)
+.metro-health-check*
+
+# Flipper
+.flipper/
+
+# Android specific
+*.ap_
+*.aab
+*.apk
+*.dex
+bin/
+gen/
+out/
+release/
+
+# iOS specific
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# CocoaPods
+Pods/
+*.podspec
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# Temporary APK files on desktop
+~/Desktop/*.apk
+鬼谷奇门*.apk
+# Mobile app directory (keep only source)
+qimen-mobile/

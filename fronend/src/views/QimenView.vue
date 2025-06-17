@@ -765,7 +765,7 @@ onMounted(() => {
 }
 
 /* Enhanced color scheme for elements */
-:deep(.tian-gan) { color: #3688ff; /* Blue */ }
+:deep(.tian-gan) { color: #66bbff; /* Bright Blue */ }
 :deep(.di-zhi) { color: #2dd12d; /* Green */ }
 :deep(.shen-sha) { color: #ff3333; /* Red */ }
 :deep(.gong-name) { color: #d4af37; /* Rich Gold */ font-weight: bold; }

@@ -25,6 +25,7 @@ const toggleMenu = () => {
         <RouterLink to="/home" active-class="active">首页</RouterLink>
         <RouterLink to="/qimen" active-class="active">奇门</RouterLink>
         <RouterLink to="/about" active-class="active">关于</RouterLink>
+        <RouterLink to="/profile" active-class="active">我的</RouterLink>
       </nav>
     </div>
   </header>
