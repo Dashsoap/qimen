@@ -1,0 +1,28 @@
+{
+  "name": "qimen-ai-backend",
+  "version": "1.0.0",
+  "description": "奇门遁甲AI分析后端服务 - Agent模式智能解盘系统",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "init-db": "node scripts/initDatabase.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "qimen",
+    "divination",
+    "ai",
+    "agent",
+    "mcp",
+    "metaphysics"
+  ],
+  "author": "Qimen AI Team",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "openai": "^5.5.1"
+  }
+}

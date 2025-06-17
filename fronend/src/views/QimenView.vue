@@ -9,28 +9,6 @@
 
     <div class="input-section">
       <div class="picker-wrapper">
-        <div class="picker-item">
-          <label class="picker-label">日期</label>
-          <DatePicker
-            :locale="locale"
-            v-model:value="dateValue"
-            class="dao-picker"
-            placeholder="请选择日期"
-            :bordered="false"
-            :dropdownClassName="'dao-dropdown'"
-          ></DatePicker>
-        </div>
-        <div class="picker-item">
-          <label class="picker-label">时辰</label>
-          <TimePicker
-            :locale="locale"
-            v-model:value="timeValue"
-            class="dao-picker"
-            placeholder="请选择时间"
-            :bordered="false"
-            :dropdownClassName="'dao-dropdown'"
-          ></TimePicker>
-        </div>
         <div class="question-wrapper">
           <label class="picker-label">占问</label>
           <input
@@ -42,9 +20,36 @@
           <div class="input-hint">输入您想要占卜的具体问题</div>
         </div>
       </div>
-      <button class="dao-button" @click="enhancedPaipan()">
-        <span class="dao-button-text">排盘</span>
-      </button>
+              <div class="action-buttons">
+          <button class="dao-button" @click="paipan()">
+            <span class="dao-button-text">排盘</span>
+          </button>
+          <button class="dao-button ai-button" @click="aiAnalysis()" :disabled="!panData || isAnalyzing">
+            <span class="dao-button-text">
+              {{ isAnalyzing ? 'AI分析中...' : 'AI智能分析' }}
+            </span>
+          </button>
+        </div>
+    </div>
+
+    <!-- AI分析结果区域 -->
+    <div class="ai-result-section" v-if="analysisResult">
+      <div class="ai-header">
+        <div class="ai-title">🔮 AI智能分析结果</div>
+        <div class="ai-subtitle">基于奇门遁甲排盘数据</div>
+      </div>
+      
+      <div class="question-display">
+        <div class="question-title">问题：</div>
+        <div class="question-content">{{ questionValue }}</div>
+      </div>
+
+      <div class="analysis-content">
+        <div class="analysis-answer">
+          <div class="answer-title">🎯 分析结果</div>
+          <div class="answer-text">{{ analysisResult.answer }}</div>
+        </div>
+      </div>
     </div>
 
     <div class="result-section" v-if="panData">
@@ -167,6 +172,8 @@ interface PanDataType {
 const dateValue = ref<Dayjs>();
 const timeValue = ref<Dayjs>();
 const questionValue = ref<string>('');
+const isAnalyzing = ref<boolean>(false);
+const analysisResult = ref<any>(null);
 const store = useQimenStore();
 const infoStore = useQimenInfoStore();
 
@@ -179,6 +186,60 @@ function paipan() {
 
   store.setPanData(new Qimen(date.year(), date.month()+1, date.date(), time.hour() || 0).p);
   console.log(store.panData);
+}
+
+// AI分析函数 - 使用前端排盘数据
+async function aiAnalysis() {
+  if (!questionValue.value) {
+    alert('请先输入占卜问题');
+    return;
+  }
+
+  if (!panData.value) {
+    alert('请先进行排盘');
+    return;
+  }
+
+  isAnalyzing.value = true;
+  analysisResult.value = null;
+
+  try {
+    // 将前端排盘数据转换为JSON格式传给后端
+    const paipanJson = JSON.parse(JSON.stringify(panData.value));
+    
+    console.log('发送排盘数据到后端:', paipanJson);
+    
+    // 调用后端AI分析API
+    const response = await fetch('http://localhost:3001/api/analysis/qimen', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question: questionValue.value,
+        paipanData: paipanJson
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('AI分析服务暂时不可用');
+    }
+
+    const result = await response.json();
+    
+    if (result.success) {
+      analysisResult.value = result.analysis;
+      analysisResult.value.steps = result.steps;
+    } else {
+      throw new Error(result.message || 'AI分析失败');
+    }
+
+  } catch (error) {
+    console.error('AI分析错误:', error);
+    alert(`AI分析失败: ${error.message}`);
+  } finally {
+    isAnalyzing.value = false;
+  }
 }
 
 // 添加鼠标跟随效果
@@ -1011,6 +1072,208 @@ onMounted(() => {
 @keyframes slideIn {
   from { transform: translateY(-30px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* 按钮样式调整 */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.ai-button {
+  background: linear-gradient(45deg, #4a90e2, #357abd, #4a90e2);
+  background-size: 200% 200%;
+  animation: buttonGradient 8s ease infinite;
+}
+
+.dao-button:disabled {
+  background: linear-gradient(45deg, #555, #666, #555);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* AI分析结果区域样式 */
+.ai-result-section {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  border-radius: 20px;
+  padding: 2rem;
+  margin: 2rem 1rem;
+  box-shadow: 
+    0 0 30px rgba(212, 175, 55, 0.3),
+    inset 0 0 20px rgba(212, 175, 55, 0.1);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.ai-result-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ai-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.ai-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #d4af37;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+  margin-bottom: 0.5rem;
+  letter-spacing: 2px;
+}
+
+.ai-subtitle {
+  font-size: 1rem;
+  color: rgba(212, 175, 55, 0.8);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.analysis-content {
+  position: relative;
+  z-index: 2;
+}
+
+.analysis-answer {
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.answer-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #d4af37;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+  letter-spacing: 1px;
+}
+
+.answer-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: justify;
+  font-family: "FangSong", "STKaiti", serif;
+  white-space: pre-line;
+}
+
+.analysis-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.meta-item {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+  padding: 0.8rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.meta-item:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.meta-label {
+  font-size: 0.9rem;
+  color: rgba(212, 175, 55, 0.8);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.meta-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d4af37;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.4);
+}
+
+.analysis-steps {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 15px;
+  padding: 1.5rem;
+}
+
+.steps-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #d4af37;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+  letter-spacing: 1px;
+}
+
+.step-list {
+  space-y: 0.8rem;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  border-radius: 10px;
+  margin-bottom: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.step-item:hover {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.step-number {
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, #d4af37, #ffd700);
+  color: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.step-action {
+  font-weight: 600;
+  color: #d4af37;
+  min-width: 100px;
+  flex-shrink: 0;
+  font-family: "FangSong", "STKaiti", serif;
+}
+
+.step-summary {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  flex: 1;
+  font-family: "FangSong", "STKaiti", serif;
 }
 
 </style>
