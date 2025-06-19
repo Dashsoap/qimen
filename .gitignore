@@ -15,7 +15,8 @@ build/
 */build/
 .next/
 out/
-
+/fronend/android
+/qimen-apk
 # Environment variables
 .env
 .env.local
@@ -23,6 +24,9 @@ out/
 .env.test.local
 .env.production.local
 *.env
+
+# Deployment configuration with sensitive information
+部署指南.md
 
 # Logs
 logs

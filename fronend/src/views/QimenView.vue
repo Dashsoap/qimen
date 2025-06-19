@@ -156,6 +156,8 @@ import { DatePicker, TimePicker } from 'ant-design-vue';
 import 'dayjs/locale/zh-cn';
 import type { Dayjs } from 'dayjs';
 import { storeToRefs } from 'pinia';
+import { API_ENDPOINTS } from '../utils/api.js';
+import axios from 'axios';
 
 dayjs.locale('zh-cn');
 
@@ -190,6 +192,8 @@ function paipan() {
 
 // AI分析函数 - 使用前端排盘数据
 async function aiAnalysis() {
+  console.log('🎯 开始AI分析流程...');
+  
   if (!questionValue.value) {
     alert('请先输入占卜问题');
     return;
@@ -204,41 +208,129 @@ async function aiAnalysis() {
   analysisResult.value = null;
 
   try {
+    // 记录环境信息
+    console.log('📱 当前环境信息:');
+    console.log('- 协议:', window.location.protocol);
+    console.log('- 主机:', window.location.host);
+    console.log('- User Agent:', navigator.userAgent);
+    console.log('- 是否移动端:', /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    
     // 将前端排盘数据转换为JSON格式传给后端
     const paipanJson = JSON.parse(JSON.stringify(panData.value));
     
-    console.log('发送排盘数据到后端:', paipanJson);
+    console.log('📊 发送排盘数据到后端:', paipanJson);
     
-    // 调用后端AI分析API
-    const response = await fetch('http://localhost:3001/api/analysis/qimen', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        question: questionValue.value,
-        paipanData: paipanJson
-      })
+    // 调用后端AI分析API - 使用原生fetch
+    const requestData = {
+      question: questionValue.value,
+      paipanData: paipanJson
+    };
+    
+    console.log('📦 发送的完整请求数据:', JSON.stringify(requestData, null, 2));
+    console.log('🌐 API端点:', API_ENDPOINTS.QIMEN_ANALYSIS);
+    
+    // 完全避免使用fetch - 使用纯XMLHttpRequest
+    console.log('📡 使用原生XMLHttpRequest（避免fetch限制）');
+    console.log('🌐 请求地址:', API_ENDPOINTS.QIMEN_ANALYSIS);
+    
+    const data = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // 配置请求
+      xhr.open('POST', API_ENDPOINTS.QIMEN_ANALYSIS, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      xhr.timeout = 30000;
+      
+      // 成功回调
+      xhr.onload = function() {
+        console.log('✅ XMLHttpRequest成功');
+        console.log('📊 状态码:', xhr.status);
+        console.log('📊 状态文本:', xhr.statusText);
+        console.log('📄 响应内容:', xhr.responseText);
+        
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const responseData = JSON.parse(xhr.responseText);
+            console.log('✅ JSON解析成功:', responseData);
+            resolve(responseData);
+          } catch (parseError) {
+            console.error('❌ JSON解析失败:', parseError);
+            reject(new Error('服务器响应格式错误'));
+          }
+        } else {
+          reject(new Error(`服务器错误: ${xhr.status} ${xhr.statusText}`));
+        }
+      };
+      
+      // 错误回调
+      xhr.onerror = function() {
+        console.error('❌ XMLHttpRequest网络错误');
+        console.error('- readyState:', xhr.readyState);
+        console.error('- status:', xhr.status);
+        reject(new Error('网络连接失败，请检查网络或服务器状态'));
+      };
+      
+      // 超时回调
+      xhr.ontimeout = function() {
+        console.error('⏰ XMLHttpRequest超时');
+        reject(new Error('请求超时，请稍后重试'));
+      };
+      
+      // 发送请求
+      console.log('📤 发送请求数据:', JSON.stringify(requestData));
+      xhr.send(JSON.stringify(requestData));
     });
 
-    if (!response.ok) {
-      throw new Error('AI分析服务暂时不可用');
-    }
+    console.log('📄 最终数据:', data);
 
-    const result = await response.json();
-    
-    if (result.success) {
-      analysisResult.value = result.analysis;
-      analysisResult.value.steps = result.steps;
+    if (data && data.success) {
+      analysisResult.value = data.analysis;
+      analysisResult.value.steps = data.steps;
+      console.log('🎉 AI分析成功完成!');
     } else {
-      throw new Error(result.message || 'AI分析失败');
+      throw new Error(data?.message || 'AI分析失败');
     }
 
   } catch (error) {
-    console.error('AI分析错误:', error);
-    alert(`AI分析失败: ${error.message}`);
+    console.error('💥 AI分析错误详细信息:');
+    console.error('- 错误类型:', error.constructor.name);
+    console.error('- 错误消息:', error.message);
+    console.error('- 错误代码:', error.code);
+    console.error('- 完整错误:', error);
+    
+    if (error.response) {
+      console.error('📡 响应错误:');
+      console.error('- 状态码:', error.response.status);
+      console.error('- 状态文本:', error.response.statusText);
+      console.error('- 响应头:', error.response.headers);
+      console.error('- 响应数据:', error.response.data);
+    } else if (error.request) {
+      console.error('📨 请求错误:');
+      console.error('- 请求对象:', error.request);
+      console.error('- 请求配置:', error.config);
+    } else {
+      console.error('⚙️ 配置错误:', error.message);
+    }
+    
+    let errorMessage = 'AI分析失败';
+    
+    if (error.response) {
+      // 服务器响应了错误状态码
+      errorMessage = `服务器错误: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`;
+    } else if (error.request) {
+      // 请求发出了但没有收到响应
+      errorMessage = `网络连接失败: ${error.message || '请检查网络或服务器状态'}`;
+    } else {
+      // 其他错误
+      errorMessage = `请求配置错误: ${error.message}`;
+    }
+    
+    alert(`AI分析失败: ${errorMessage}`);
   } finally {
     isAnalyzing.value = false;
+    console.log('🏁 AI分析流程结束');
   }
 }
 

@@ -15,9 +15,11 @@
     "@capacitor/core": "^7.3.0",
     "@capacitor/ios": "^7.3.0",
     "ant-design-vue": "^4.1.2",
+    "axios": "^1.10.0",
     "big-integer": "^1.6.52",
     "dayjs": "^1.11.10",
     "gsap": "^3.12.4",
+    "marked": "^15.0.12",
     "pinia": "^2.1.7",
     "three": "^0.160.0",
     "vue": "^3.3.11",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.2",
+    "typescript": "^5.8.3",
     "vite": "^5.0.10"
   }
 }

@@ -5,6 +5,14 @@ import { QimenAgent } from '../agents/QimenAgent.js';
 const router = express.Router();
 let qimenAgent = null;
 
+// 处理OPTIONS预检请求（按教程配置）
+router.options('/qimen', (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept");
+  res.sendStatus(200);
+});
+
 // 初始化AI Agent
 async function initAgent() {
   if (!qimenAgent) {
@@ -16,6 +24,11 @@ async function initAgent() {
 
 // POST /api/analysis/qimen - 奇门遁甲AI分析
 router.post('/qimen', async (req, res) => {
+  // 添加CORS支持（按教程配置）
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept");
+  
   try {
     const { question, paipanData, sessionId } = req.body;
     

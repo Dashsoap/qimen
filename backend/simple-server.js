@@ -16,13 +16,56 @@ const openai = new OpenAI({
   baseURL: ARK_BASE_URL,
 });
 
-// 中间件
+// 中间件配置
 app.use(cors({
-  origin: '*',
-  credentials: true
+  origin: function (origin, callback) {
+    // 允许没有origin的请求（如移动应用）
+    if (!origin) return callback(null, true);
+    
+    // 开发模式下允许所有来源（适用于Android应用）
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200,
+  preflightContinue: false
 }));
 
-app.use(express.json());
+// Body解析中间件
+app.use(express.json({
+  limit: '10mb',
+  type: 'application/json'
+}));
+
+app.use(express.urlencoded({ 
+  extended: true,
+  limit: '10mb'
+}));
+
+// 添加请求日志中间件
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  next();
+});
+
+// 根路径
+app.get('/', (req, res) => {
+  res.json({
+    message: '🔮 奇门遁甲AI后端服务',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      analysis: '/api/analysis/qimen',
+      paipan: '/api/qimen/paipan'
+    },
+    server: '101.201.148.8:3001',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // 健康检查
 app.get('/health', (req, res) => {
@@ -83,12 +126,41 @@ app.post('/api/qimen/paipan', (req, res) => {
 
 // AI分析API
 app.post('/api/analysis/qimen', async (req, res) => {
-  const { question, paipanData } = req.body;
-  
-  console.log('收到AI分析请求:', question);
-  console.log('排盘数据:', JSON.stringify(paipanData, null, 2));
-  
   try {
+    // 检查请求体是否存在
+    if (!req.body) {
+      console.error('请求体为空');
+      return res.status(400).json({
+        success: false,
+        error: '请求体为空',
+        message: '请确保发送了有效的JSON数据'
+      });
+    }
+
+    const { question, paipanData } = req.body;
+    
+    // 验证必要参数
+    if (!question) {
+      console.error('缺少question参数');
+      return res.status(400).json({
+        success: false,
+        error: '缺少问题参数',
+        message: '请提供要分析的问题'
+      });
+    }
+
+    if (!paipanData) {
+      console.error('缺少paipanData参数');
+      return res.status(400).json({
+        success: false,
+        error: '缺少排盘数据',
+        message: '请提供奇门遁甲排盘数据'
+      });
+    }
+    
+    console.log('收到AI分析请求:', question);
+    console.log('排盘数据:', JSON.stringify(paipanData, null, 2));
+    
     // 解析排盘数据
     const parsedPaipan = parsePaipanData(paipanData);
     
@@ -114,10 +186,42 @@ app.post('/api/analysis/qimen', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'AI分析失败',
-      message: error.message
+      message: error.message || '服务器内部错误'
     });
   }
 });
+
+// 清理AI回答，移除免责声明
+function cleanAiResponse(response) {
+  if (!response) return response;
+  
+  // 定义需要过滤的免责声明关键词
+  const disclaimerPatterns = [
+    /以上内容由.*?生成.*?仅供.*?参考.*?/gi,
+    /本回答由.*?生成.*?/gi,
+    /仅供娱乐参考.*?/gi,
+    /请注意.*?仅供参考.*?/gi,
+    /免责声明.*?/gi,
+    /\*\*免责声明\*\*.*?/gi,
+    /---\s*免责声明.*?/gi,
+    /注意：.*?仅供参考.*?/gi,
+    /声明：.*?娱乐.*?/gi
+  ];
+  
+  let cleanedResponse = response;
+  
+  // 移除匹配的免责声明
+  disclaimerPatterns.forEach(pattern => {
+    cleanedResponse = cleanedResponse.replace(pattern, '');
+  });
+  
+  // 移除末尾可能的多余空行和分隔符
+  cleanedResponse = cleanedResponse.replace(/\n{3,}/g, '\n\n');
+  cleanedResponse = cleanedResponse.replace(/---+\s*$/g, '');
+  cleanedResponse = cleanedResponse.trim();
+  
+  return cleanedResponse;
+}
 
 // 解析排盘数据
 function parsePaipanData(paipanData) {
@@ -173,7 +277,9 @@ async function callDeepSeekAPI(question, parsedPaipan) {
 2. 解读要专业且通俗易懂
 3. 包含时局分析、格局解读、趋势预测
 4. 给出具体可行的建议
-5. 语言要古雅而不失现代感`;
+5. 语言要古雅而不失现代感
+6. 直接给出分析结果，不要添加任何免责声明或生成说明
+7. 以专业易学大师的身份回答，保持权威性和专业性`;
 
     const userPrompt = `请分析以下奇门遁甲排盘，回答用户问题：
 
@@ -198,7 +304,9 @@ ${JSON.stringify(parsedPaipan, null, 2)}
 2. 格局特点解读  
 3. 针对问题的具体分析
 4. 趋势预测和建议
-5. 注意事项`;
+5. 注意事项
+
+注意：请以专业易学大师的身份直接给出分析结果，不要添加任何关于AI生成、仅供参考等免责声明。保持专业权威的语气，就像真正的奇门遁甲大师在为求测者解答。`;
 
     console.log('调用豆包DeepSeek API (使用OpenAI SDK)...');
     
@@ -215,7 +323,12 @@ ${JSON.stringify(parsedPaipan, null, 2)}
     });
 
     const executionTime = Date.now() - startTime;
-    const aiAnswer = completion.choices[0]?.message?.content;
+    let aiAnswer = completion.choices[0]?.message?.content;
+
+    // 过滤掉可能的免责声明
+    if (aiAnswer) {
+      aiAnswer = cleanAiResponse(aiAnswer);
+    }
 
     console.log('豆包API调用成功，响应时间:', executionTime + 'ms');
     console.log('AI回答长度:', aiAnswer?.length, '字符');
@@ -287,14 +400,15 @@ function generateFallbackAnalysis(question, parsedPaipan, executionTime) {
   };
 }
 
-// 启动服务器
-app.listen(PORT, () => {
+// 启动服务器 - 监听所有网络接口
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`
 🎉 奇门遁甲AI后端服务启动成功！
 
-📡 服务地址: http://localhost:${PORT}
-🔮 健康检查: http://localhost:${PORT}/health
-🤖 AI模型: 豆包 DeepSeek-R1-250528 (模拟模式)
+📡 本地地址: http://localhost:${PORT}
+🌐 公网地址: http://101.201.148.8:${PORT}
+🔮 健康检查: http://101.201.148.8:${PORT}/health
+🤖 AI模型: 豆包 DeepSeek-R1-250528
 📚 数据库: 模拟数据
 
 ✨ 准备接收奇门遁甲分析请求...

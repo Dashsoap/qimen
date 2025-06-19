@@ -1,5 +1,19 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import { onMounted, onUnmounted } from 'vue'
+import performanceManager from './utils/performance.js'
+
+onMounted(() => {
+  // 性能管理器会自动处理页面可见性和内存管理
+  performanceManager.addObserver((event, data) => {
+    console.log(`性能事件: ${event}`, data)
+  })
+})
+
+onUnmounted(() => {
+  // 清理性能管理器
+  performanceManager.destroy()
+})
 </script>
 
 <template>
@@ -397,5 +411,51 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, rgba(255, 215, 0, 0.8), rgba(212, 175, 55, 0.8));
+}
+
+/* 性能优化：动画暂停 */
+.pause-animations * {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
+
+.pause-animations *::before,
+.pause-animations *::after {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
+
+/* 减少动画复杂度以降低内存使用 */
+@media (max-width: 768px) {
+  .nav-particles {
+    opacity: 0.3; /* 降低粒子效果透明度 */
+  }
+  
+  .nav-bg-effect {
+    opacity: 0.5; /* 降低背景效果 */
+  }
+  
+  .mystical-glow {
+    animation-duration: 6s; /* 减慢动画速度 */
+  }
+  
+  .mystical-highlight.active .nav-icon {
+    animation-duration: 8s; /* 减慢旋转动画 */
+  }
+}
+
+/* 低内存模式：进一步简化效果 */
+@media (max-width: 480px) {
+  .nav-particles {
+    display: none; /* 完全关闭粒子效果 */
+  }
+  
+  .nav-bg-effect {
+    display: none; /* 关闭背景效果 */
+  }
+  
+  .app-container::before {
+    display: none; /* 关闭复杂背景 */
+  }
 }
 </style>

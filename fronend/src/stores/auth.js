@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { API_BASE_URL } from '../utils/api.js'
+import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -11,28 +13,21 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials) => {
     isLoading.value = true
     try {
-      const response = await fetch('http://localhost:3001/auth/login', {
+      const response = await axios({
         method: 'POST',
+        url: `${API_BASE_URL}/auth/login`,
+        data: credentials,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        timeout: 10000, // 10秒超时
+        transformRequest: [function (data) {
+          return JSON.stringify(data);
+        }]
       })
 
-      // 检查是否成功获取响应
-      if (!response.ok) {
-        let errorMessage = '登录失败'
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.message || errorMessage
-        } catch (parseError) {
-          // 如果无法解析错误响应，使用默认错误消息
-          errorMessage = `登录失败 (${response.status})`
-        }
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
+      const data = response.data
       
       token.value = data.token
       user.value = data.user
@@ -43,10 +38,16 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Login error:', error)
       let errorMessage = '登录失败，请重试'
       
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      if (error.response) {
+        // 服务器响应了错误状态码
+        const errorData = error.response.data
+        errorMessage = errorData?.message || `登录失败 (${error.response.status})`
+      } else if (error.request) {
+        // 请求发出了但没有收到响应
         errorMessage = '无法连接到服务器，请检查网络连接或联系管理员'
-      } else if (error.message) {
-        errorMessage = error.message
+      } else {
+        // 其他错误
+        errorMessage = error.message || '请求配置错误'
       }
       
       return { success: false, message: errorMessage }
@@ -58,28 +59,21 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (userData) => {
     isLoading.value = true
     try {
-      const response = await fetch('http://localhost:3001/auth/register', {
+      const response = await axios({
         method: 'POST',
+        url: `${API_BASE_URL}/auth/register`,
+        data: userData,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify(userData),
+        timeout: 10000, // 10秒超时
+        transformRequest: [function (data) {
+          return JSON.stringify(data);
+        }]
       })
 
-      // 检查是否成功获取响应
-      if (!response.ok) {
-        let errorMessage = '注册失败'
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.message || errorMessage
-        } catch (parseError) {
-          // 如果无法解析错误响应，使用默认错误消息
-          errorMessage = `注册失败 (${response.status})`
-        }
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
+      const data = response.data
       
       token.value = data.token
       user.value = data.user
@@ -90,10 +84,16 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Register error:', error)
       let errorMessage = '注册失败，请重试'
       
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      if (error.response) {
+        // 服务器响应了错误状态码
+        const errorData = error.response.data
+        errorMessage = errorData?.message || `注册失败 (${error.response.status})`
+      } else if (error.request) {
+        // 请求发出了但没有收到响应
         errorMessage = '无法连接到服务器，请检查网络连接或联系管理员'
-      } else if (error.message) {
-        errorMessage = error.message
+      } else {
+        // 其他错误
+        errorMessage = error.message || '请求配置错误'
       }
       
       return { success: false, message: errorMessage }
@@ -112,7 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return false
 
     try {
-      const response = await fetch('http://localhost:3001/auth/profile', {
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token.value}`,
         },

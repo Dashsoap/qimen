@@ -4,39 +4,147 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { gsap } from "gsap";
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import fonts from '../assets/fonts.json';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import performanceManager from '../utils/performance.js';
 
 // Canvas
 const canvas = ref();
 const typingText = ref();
 
+// 全局变量用于清理
+let scene, camera, renderer, controls, composer;
+let animationId;
+let typingTimeline;
+let isPageVisible = true;
+let meshesToDispose = [];
+let materialsToDispose = [];
+let geometriesToDispose = [];
+
+// 页面可见性监听
+const handleVisibilityChange = () => {
+  isPageVisible = !document.hidden;
+  if (isPageVisible) {
+    // 页面可见时恢复动画
+    animate();
+  } else {
+    // 页面不可见时停止动画
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+  }
+};
+
+  // 清理资源函数
+  const disposeThreeJSResources = () => {
+    // 移除页面可见性监听
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    
+    // 清理几何体
+    geometriesToDispose.forEach(geometry => {
+      if (geometry.dispose) geometry.dispose();
+    });
+    
+    // 清理材质
+    materialsToDispose.forEach(material => {
+      if (material.dispose) material.dispose();
+    });
+    
+    // 清理网格
+    meshesToDispose.forEach(mesh => {
+      if (mesh.geometry && mesh.geometry.dispose) mesh.geometry.dispose();
+      if (mesh.material) {
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(mat => mat.dispose && mat.dispose());
+        } else {
+          mesh.material.dispose && mesh.material.dispose();
+        }
+      }
+      if (mesh.parent) mesh.parent.remove(mesh);
+    });
+    
+    // 清理控制器
+    if (controls) {
+      controls.dispose();
+    }
+    
+    // 清理渲染器
+    if (renderer) {
+      renderer.dispose();
+      if (renderer.domElement && renderer.domElement.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
+    }
+    
+    // 清理后处理
+    if (composer) {
+      composer.dispose && composer.dispose();
+    }
+    
+    // 清理动画
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+    
+    // 清理GSAP动画
+    if (typingTimeline) {
+      typingTimeline.kill();
+    }
+    gsap.killTweensOf("*"); // 清理所有GSAP动画
+    
+    // 清理窗口事件监听器
+    window.removeEventListener('resize', handleResize);
+    window.removeEventListener('click', handleClick);
+    
+    // 清空数组
+    meshesToDispose = [];
+    materialsToDispose = [];
+    geometriesToDispose = [];
+  };
+
 onMounted(() => {
+  // 集成性能管理器
+  performanceManager.addObserver((event, data) => {
+    if (event === 'lowMemory' && data) {
+      console.log('🔥 3D场景进入低内存模式')
+      // 可以在这里降低3D渲染质量
+    } else if (event === 'animationsPaused' && data) {
+      console.log('⏸️ 3D动画已暂停')
+    } else if (event === 'animationsPaused' && !data) {
+      console.log('▶️ 3D动画已恢复')
+    }
+  })
+  
+  // 添加页面可见性监听（保留原有的，因为性能管理器只管理CSS动画）
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
   // 添加打字机效果
   const text = "奇门遁甲‌是一种时空能量学，它通过符号和模型来窥测地球上的万事万物。奇门遁甲的核心在于查验天体对地球的能量频率以及地球方位的能量与气场";
   const typingSpeed = 0.15; // 打字速度，每个字的时间(秒)
   
   let currentText = "";
   const chars = text.split('');
-  const timeline = gsap.timeline();
+  typingTimeline = gsap.timeline();
   
   chars.forEach((char, index) => {
-    timeline.to(typingText.value, {
+    typingTimeline.to(typingText.value, {
       duration: 0.01, // 瞬间更新
       onStart: () => {
         currentText += char;
-        typingText.value.textContent = currentText;
+        if (typingText.value) {
+          typingText.value.textContent = currentText;
+        }
       },
       delay: typingSpeed // 每个字之间的延迟
     });
   });
   
   // Scene
-  const scene = new THREE.Scene();
+  scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000022); // 深蓝色背景
 
   //----------------------
@@ -256,6 +364,9 @@ onMounted(() => {
       emissive: 0x333333, // 添加发光效果
       emissiveIntensity: 0.5,
     });
+    
+    // 记录材质用于清理
+    materialsToDispose.push(material);
 
     // create ring
     circle.forEach((i, j) => {
@@ -599,7 +710,7 @@ onMounted(() => {
   };
 
   // 相机
-  const camera = new THREE.PerspectiveCamera(
+  camera = new THREE.PerspectiveCamera(
     75,
     sizes.width / sizes.height,
     0.1,
@@ -612,7 +723,7 @@ onMounted(() => {
   scene.add(camera);
 
   // 渲染器
-  const renderer = new THREE.WebGLRenderer({
+  renderer = new THREE.WebGLRenderer({
     canvas: canvas.value,
     antialias: true,
     alpha: true,
@@ -621,7 +732,7 @@ onMounted(() => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   // 后期处理
-  const composer = new EffectComposer(renderer);
+  composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
@@ -639,7 +750,7 @@ onMounted(() => {
   composer.addPass(outputPass);
 
   // 窗口调整大小事件
-  window.addEventListener("resize", () => {
+  const handleResize = () => {
     sizes.height = window.innerHeight;
     sizes.width = window.innerWidth < 767 ? window.innerWidth : window.innerWidth - 180;
 
@@ -652,10 +763,12 @@ onMounted(() => {
     // 更新composer大小
     composer.setSize(sizes.width, sizes.height);
     bloomPass.resolution.set(sizes.width, sizes.height);
-  });
+  };
+  
+  window.addEventListener("resize", handleResize);
 
   // 控制器
-  const controls = new OrbitControls(camera, canvas.value);
+  controls = new OrbitControls(camera, canvas.value);
   controls.enableDamping = true;
   controls.maxDistance = 50;
   controls.enablePan = false;
@@ -704,7 +817,7 @@ onMounted(() => {
   cameraAnimation();
 
   // 添加点击交互
-  window.addEventListener('click', () => {
+  const handleClick = () => {
     // 点击时触发爆炸效果
     const explodeAnimation = gsap.timeline();
     
@@ -767,15 +880,31 @@ onMounted(() => {
           pointLight1.color.setRGB(originalColor.r, originalColor.g, originalColor.b);
         }
       }, 0.5);
-  });
+  };
+  
+  window.addEventListener('click', handleClick);
 
-  // 渲染循环
+  // 渲染循环 - 添加页面可见性检查
   const tick = () => {
+    if (!isPageVisible) return; // 页面不可见时不渲染
+    
     controls.update();
     composer.render();
-    requestAnimationFrame(tick);
+    animationId = requestAnimationFrame(tick);
   };
+  
+  // 动画函数（可被外部调用）
+  const animate = () => {
+    if (isPageVisible && !animationId) {
+      tick();
+    }
+  };
+  
   tick();
+});
+
+onUnmounted(() => {
+  disposeThreeJSResources();
 });
 </script>
 
