@@ -11,6 +11,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import performanceManager from '../utils/performance.js';
+import mobileOptimizer from '../utils/mobile-optimization.js';
 
 // Canvas
 const canvas = ref();
@@ -592,7 +593,7 @@ onMounted(() => {
 
   // 创建粒子系统
   const createParticles = () => {
-    const particlesCount = 800;
+    const particlesCount = mobileOptimizer.optimizedSettings.particleCount;
     const positions = new Float32Array(particlesCount * 3);
     
     for(let i = 0; i < particlesCount; i++) {
@@ -725,11 +726,14 @@ onMounted(() => {
   // 渲染器
   renderer = new THREE.WebGLRenderer({
     canvas: canvas.value,
-    antialias: true,
+    antialias: mobileOptimizer.optimizedSettings.antialias,
     alpha: true,
   });
   renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(mobileOptimizer.optimizedSettings.pixelRatio);
+  
+  // 应用移动端优化
+  mobileOptimizer.adjustRenderQuality(renderer, scene, camera);
 
   // 后期处理
   composer = new EffectComposer(renderer);
@@ -739,7 +743,7 @@ onMounted(() => {
   // 添加适度的辉光效果
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(sizes.width, sizes.height),
-    0.3,  // 降低强度
+    mobileOptimizer.optimizedSettings.bloomStrength,  // 根据设备性能调整强度
     0.2,  // 减小半径
     0.9   // 提高阈值，让只有最亮的部分发光
   );

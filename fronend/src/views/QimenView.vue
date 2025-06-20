@@ -16,6 +16,9 @@
             type="text"
             class="dao-input"
             placeholder="请输入您的占卜问题"
+            @blur="handleInputBlur"
+            @focus="handleInputFocus"
+            ref="questionInput"
           />
           <div class="input-hint">输入您想要占卜的具体问题</div>
         </div>
@@ -146,7 +149,7 @@
 
 <script setup lang="ts">
 import locale from 'ant-design-vue/es/date-picker/locale/zh_CN';
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import dayjs from 'dayjs';
 import Qimen from '../qimendunjia/index.js'
 import QimenItem from '../components/QimenItem.vue'
@@ -179,7 +182,47 @@ const analysisResult = ref<any>(null);
 const store = useQimenStore();
 const infoStore = useQimenInfoStore();
 
+// 🔧 移动端输入保护
+const questionInput = ref<HTMLInputElement | null>(null);
+const lastQuestionBackup = ref<string>('');
+
 const { panData } = storeToRefs(store);
+
+// 初始化时自动排盘
+onMounted(() => {
+  // 自动排盘 - 恢复原有的进入页面自动排盘功能
+  paipan();
+  
+  // 🔧 移动端输入保护：监听输入值变化
+  watch(questionValue, (newValue) => {
+    if (newValue && newValue.trim()) {
+      lastQuestionBackup.value = newValue.trim();
+      console.log('📝 输入值变化备份:', newValue.trim());
+    }
+  }, { immediate: true });
+  
+  // 🔧 移动端保护：防止页面失焦时输入丢失
+  if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    console.log('📱 检测到移动端，启用输入保护机制');
+    
+    // 监听页面可见性变化
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // 页面隐藏时保存输入
+        if (questionValue.value && questionValue.value.trim()) {
+          lastQuestionBackup.value = questionValue.value.trim();
+          console.log('📱 页面隐藏，保存输入:', lastQuestionBackup.value);
+        }
+      } else {
+        // 页面显示时恢复输入
+        if (lastQuestionBackup.value && (!questionValue.value || questionValue.value.length < lastQuestionBackup.value.length)) {
+          questionValue.value = lastQuestionBackup.value;
+          console.log('📱 页面显示，恢复输入:', questionValue.value);
+        }
+      }
+    });
+  }
+});
 
 function paipan() {
   // Always use valid date/time, defaulting to current if not selected
@@ -190,11 +233,40 @@ function paipan() {
   console.log(store.panData);
 }
 
+// 🔧 移动端输入保护：处理输入框焦点事件
+function handleInputFocus() {
+  console.log('📝 输入框获得焦点');
+  // 记录当前值作为备份
+  lastQuestionBackup.value = questionValue.value || '';
+}
+
+function handleInputBlur() {
+  console.log('📝 输入框失去焦点，当前值:', questionValue.value);
+  // 更新备份
+  if (questionValue.value && questionValue.value.trim()) {
+    lastQuestionBackup.value = questionValue.value.trim();
+  }
+}
+
 // AI分析函数 - 使用前端排盘数据
 async function aiAnalysis() {
   console.log('🎯 开始AI分析流程...');
   
-  if (!questionValue.value) {
+  // 🔧 修复移动端输入问题：使用多重备份机制
+  const questionSnapshot = questionValue.value?.trim() || '';
+  const lastBackup = lastQuestionBackup.value?.trim() || '';
+  const inputElement = questionInput.value || 
+                      document.querySelector('.dao-input') as HTMLInputElement;
+  
+  // 🔧 多重备份：从多个源获取问题内容
+  let inputBackup = questionSnapshot || lastBackup;
+  
+  if (inputElement && inputElement.value?.trim()) {
+    inputBackup = inputElement.value.trim();
+  }
+  
+  // 最终检查：确保有问题内容
+  if (!inputBackup || inputBackup.length === 0) {
     alert('请先输入占卜问题');
     return;
   }
@@ -203,6 +275,12 @@ async function aiAnalysis() {
     alert('请先进行排盘');
     return;
   }
+
+  console.log('🔧 问题内容多重检查:');
+  console.log('- questionValue.value:', questionValue.value);
+  console.log('- lastQuestionBackup.value:', lastQuestionBackup.value);
+  console.log('- inputElement.value:', inputElement?.value);
+  console.log('- 最终使用:', inputBackup);
 
   isAnalyzing.value = true;
   analysisResult.value = null;
@@ -214,80 +292,81 @@ async function aiAnalysis() {
     console.log('- 主机:', window.location.host);
     console.log('- User Agent:', navigator.userAgent);
     console.log('- 是否移动端:', /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    console.log('- 问题备份:', inputBackup);
     
     // 将前端排盘数据转换为JSON格式传给后端
     const paipanJson = JSON.parse(JSON.stringify(panData.value));
     
     console.log('📊 发送排盘数据到后端:', paipanJson);
     
-    // 调用后端AI分析API - 使用原生fetch
+    // 🔧 使用备份的问题内容，确保完整性
     const requestData = {
-      question: questionValue.value,
+      question: inputBackup,
       paipanData: paipanJson
     };
+    
+    // 🔧 在请求前再次确认问题内容完整性
+    if (!requestData.question || requestData.question.length === 0) {
+      throw new Error('问题内容为空，请重新输入');
+    }
     
     console.log('📦 发送的完整请求数据:', JSON.stringify(requestData, null, 2));
     console.log('🌐 API端点:', API_ENDPOINTS.QIMEN_ANALYSIS);
     
-    // 完全避免使用fetch - 使用纯XMLHttpRequest
-    console.log('📡 使用原生XMLHttpRequest（避免fetch限制）');
-    console.log('🌐 请求地址:', API_ENDPOINTS.QIMEN_ANALYSIS);
+    // 🔧 移动端多服务器尝试策略
+    console.log('📡 使用移动端多服务器尝试策略');
+    console.log('⏰ 预计等待时间: 2-3分钟 (AI分析中...)');
     
-    const data = await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
+    // 导入移动端HTTP工具
+    const { default: MobileHttp } = await import('../utils/mobile-http.js');
+    
+    // 🔧 获取所有可能的API端点
+    const allEndpoints = API_ENDPOINTS.getAllAnalysisEndpoints();
+    console.log('🔗 尝试的服务器端点:', allEndpoints);
+    
+    let response = null;
+    let lastError = null;
+    
+    // 🔧 尝试所有可用的服务器端点
+    for (let i = 0; i < allEndpoints.length; i++) {
+      const endpoint = allEndpoints[i];
+      console.log(`🔄 尝试服务器 ${i + 1}/${allEndpoints.length}: ${endpoint}`);
       
-      // 配置请求
-      xhr.open('POST', API_ENDPOINTS.QIMEN_ANALYSIS, true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      xhr.timeout = 30000;
-      
-      // 成功回调
-      xhr.onload = function() {
-        console.log('✅ XMLHttpRequest成功');
-        console.log('📊 状态码:', xhr.status);
-        console.log('📊 状态文本:', xhr.statusText);
-        console.log('📄 响应内容:', xhr.responseText);
+      try {
+        response = await MobileHttp.post(endpoint, requestData);
+        console.log(`✅ 服务器 ${i + 1} 连接成功!`);
+        break; // 成功了就跳出循环
+      } catch (error) {
+        console.log(`❌ 服务器 ${i + 1} 失败:`, error.message);
+        lastError = error;
         
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const responseData = JSON.parse(xhr.responseText);
-            console.log('✅ JSON解析成功:', responseData);
-            resolve(responseData);
-          } catch (parseError) {
-            console.error('❌ JSON解析失败:', parseError);
-            reject(new Error('服务器响应格式错误'));
-          }
-        } else {
-          reject(new Error(`服务器错误: ${xhr.status} ${xhr.statusText}`));
+        // 如果不是最后一个服务器，等待一下再尝试下一个
+        if (i < allEndpoints.length - 1) {
+          console.log(`⏳ 等待2秒后尝试下一个服务器...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
-      };
-      
-      // 错误回调
-      xhr.onerror = function() {
-        console.error('❌ XMLHttpRequest网络错误');
-        console.error('- readyState:', xhr.readyState);
-        console.error('- status:', xhr.status);
-        reject(new Error('网络连接失败，请检查网络或服务器状态'));
-      };
-      
-      // 超时回调
-      xhr.ontimeout = function() {
-        console.error('⏰ XMLHttpRequest超时');
-        reject(new Error('请求超时，请稍后重试'));
-      };
-      
-      // 发送请求
-      console.log('📤 发送请求数据:', JSON.stringify(requestData));
-      xhr.send(JSON.stringify(requestData));
-    });
+      }
+    }
+    
+    // 🔧 检查是否有成功的响应
+    if (!response) {
+      throw new Error(`所有服务器都无法连接: ${lastError?.message || '未知错误'}`);
+    }
+    
+    const data = response.data;
 
     console.log('📄 最终数据:', data);
 
     if (data && data.success) {
       analysisResult.value = data.analysis;
       analysisResult.value.steps = data.steps;
+      
+      // 🔧 确保显示的问题内容正确
+      if (analysisResult.value && inputBackup !== questionValue.value) {
+        console.log('🔧 修复问题显示内容不一致');
+        questionValue.value = inputBackup;
+      }
+      
       console.log('🎉 AI分析成功完成!');
     } else {
       throw new Error(data?.message || 'AI分析失败');
@@ -299,6 +378,11 @@ async function aiAnalysis() {
     console.error('- 错误消息:', error.message);
     console.error('- 错误代码:', error.code);
     console.error('- 完整错误:', error);
+    
+    // 🔧 确保错误发生时问题内容不会丢失
+    if (inputBackup && inputBackup !== questionValue.value) {
+      questionValue.value = inputBackup;
+    }
     
     if (error.response) {
       console.error('📡 响应错误:');
@@ -330,7 +414,7 @@ async function aiAnalysis() {
     alert(`AI分析失败: ${errorMessage}`);
   } finally {
     isAnalyzing.value = false;
-    console.log('🏁 AI分析流程结束');
+    console.log('🎉 AI分析流程结束');
   }
 }
 

@@ -1,13 +1,17 @@
 {
-  "name": "yunque-qimen",
-  "version": "0.0.0",
+  "name": "yunque-qimen-1750352961",
+  "version": "1.0.1750352961",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:github": "vite build --base=/yunque-qimen"
+    "build:github": "vite build --base=/yunque-qimen",
+    "update-app-name": "node update-app-name.mjs",
+    "build:mobile": "npm run update-app-name && npm run build && npx cap sync",
+    "android": "npm run build:mobile && npx cap run android",
+    "ios": "npm run build:mobile && npx cap run ios"
   },
   "dependencies": {
     "@capacitor/android": "^7.3.0",
