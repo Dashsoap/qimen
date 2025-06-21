@@ -526,44 +526,61 @@ onUnmounted(() => {
 }
 
 .stream-result-section {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 15px;
-  padding: 25px;
-  margin-top: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  border-radius: 20px;
+  padding: 2rem;
+  margin: 2rem 1rem;
+  box-shadow: 
+    0 0 30px rgba(212, 175, 55, 0.3),
+    inset 0 0 20px rgba(212, 175, 55, 0.1);
   position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.stream-result-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .stream-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 15px;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 .stream-title {
-  font-size: 20px;
-  font-weight: bold;
-  color: #4a5568;
-  background: linear-gradient(45deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #d4af37;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+  margin-bottom: 0.5rem;
+  letter-spacing: 2px;
 }
 
 .stream-subtitle {
-  font-size: 14px;
-  color: #718096;
-  margin-top: 5px;
+  font-size: 1rem;
+  color: rgba(212, 175, 55, 0.8);
+  font-weight: 400;
+  letter-spacing: 1px;
 }
 
 .stream-close {
   cursor: pointer;
-  font-size: 24px;
-  color: #a0aec0;
+  font-size: 1.5rem;
+  color: rgba(212, 175, 55, 0.6);
   width: 30px;
   height: 30px;
   display: flex;
@@ -571,30 +588,38 @@ onUnmounted(() => {
   justify-content: center;
   border-radius: 50%;
   transition: all 0.3s;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .stream-close:hover {
-  background: #f56565;
+  background: rgba(220, 38, 38, 0.8);
   color: white;
+  border-color: #dc2626;
 }
 
 .question-display {
-  background: #f7fafc;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  border-left: 4px solid #4299e1;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 2;
 }
 
 .question-title {
-  font-weight: bold;
-  color: #2d3748;
-  margin-bottom: 8px;
+  font-weight: 600;
+  color: #d4af37;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+  letter-spacing: 1px;
 }
 
 .question-content {
-  color: #4a5568;
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.8;
+  font-family: "FangSong", "STKaiti", serif;
 }
 
 .stream-steps {
@@ -604,35 +629,40 @@ onUnmounted(() => {
 .stream-step {
   display: flex;
   align-items: center;
-  padding: 12px;
-  margin-bottom: 10px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.8rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
   transition: all 0.3s;
 }
 
 .stream-step.active {
-  background: linear-gradient(45deg, #e6fffa, #b2f5ea);
-  border-left: 4px solid #38b2ac;
+  background: rgba(212, 175, 55, 0.1);
+  border-left: 4px solid #d4af37;
+  border-color: rgba(212, 175, 55, 0.4);
   transform: translateX(5px);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 
 .step-icon {
-  font-size: 18px;
-  margin-right: 12px;
+  font-size: 1.2rem;
+  margin-right: 1rem;
   width: 25px;
   text-align: center;
+  color: #d4af37;
 }
 
 .step-text {
   flex: 1;
-  color: #4a5568;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
+  font-family: "FangSong", "STKaiti", serif;
 }
 
 .step-time {
-  font-size: 12px;
-  color: #a0aec0;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 55, 0.6);
 }
 
 .stream-content {
@@ -647,9 +677,11 @@ onUnmounted(() => {
 }
 
 .content-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #4a5568;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #d4af37;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+  letter-spacing: 1px;
 }
 
 .content-progress {
@@ -661,36 +693,40 @@ onUnmounted(() => {
 .progress-bar {
   width: 120px;
   height: 6px;
-  background: #e2e8f0;
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 3px;
   overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(45deg, #4299e1, #667eea);
+  background: linear-gradient(45deg, #d4af37, #ffd700);
   transition: width 0.5s ease;
+  box-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
 }
 
 .progress-text {
-  font-size: 12px;
-  color: #718096;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 55, 0.8);
 }
 
 .content-text {
   position: relative;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 15px;
+  padding: 1.5rem;
   min-height: 100px;
 }
 
 .typing-text {
-  color: #4a5568;
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.8;
-  white-space: pre-wrap;
+  white-space: pre-line;
   word-wrap: break-word;
+  font-family: "FangSong", "STKaiti", serif;
+  text-align: justify;
 }
 
 .typing-text.typing {
@@ -699,17 +735,19 @@ onUnmounted(() => {
 
 .cursor {
   display: inline-block;
-  background: #4299e1;
+  background: #d4af37;
   width: 2px;
   height: 20px;
   animation: blink 1s infinite;
   margin-left: 2px;
+  box-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
 }
 
 .stream-complete {
-  background: linear-gradient(45deg, #c6f6d5, #9ae6b4);
-  padding: 20px;
-  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 1.5rem;
+  border-radius: 15px;
   text-align: center;
 }
 
@@ -726,9 +764,10 @@ onUnmounted(() => {
 }
 
 .complete-text {
-  font-size: 18px;
-  font-weight: bold;
-  color: #22543d;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #d4af37;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
 }
 
 .complete-stats {
@@ -742,21 +781,23 @@ onUnmounted(() => {
 }
 
 .stat-label {
-  font-size: 12px;
-  color: #22543d;
-  opacity: 0.8;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 55, 0.8);
+  margin-bottom: 0.3rem;
 }
 
 .stat-value {
-  font-size: 16px;
-  font-weight: bold;
-  color: #22543d;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d4af37;
+  text-shadow: 0 0 3px rgba(212, 175, 55, 0.4);
 }
 
 .stream-error {
-  background: linear-gradient(45deg, #fed7d7, #feb2b2);
-  padding: 20px;
-  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  padding: 1.5rem;
+  border-radius: 15px;
   text-align: center;
 }
 
@@ -765,23 +806,25 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
 }
 
 .error-icon {
-  font-size: 24px;
+  font-size: 1.5rem;
+  color: #dc2626;
 }
 
 .error-text {
-  font-size: 18px;
-  font-weight: bold;
-  color: #c53030;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #dc2626;
 }
 
 .error-message {
-  color: #c53030;
-  margin-bottom: 15px;
+  color: rgba(220, 38, 38, 0.9);
+  margin-bottom: 1rem;
   line-height: 1.6;
+  font-family: "FangSong", "STKaiti", serif;
 }
 
 .retry-button {
@@ -792,6 +835,17 @@ onUnmounted(() => {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes blink {

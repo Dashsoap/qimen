@@ -5,10 +5,10 @@ import OpenAI from 'openai';
 const app = express();
 const PORT = 3001;
 
-// 豆包API配置
-const ARK_API_KEY = '847716db-7e9f-4cef-8dbd-8c4d25f23d5a';
-const ARK_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3';
-const ARK_MODEL = 'deepseek-r1-250528'; // DeepSeek-R1-250528模型
+// SophNet API配置
+const ARK_API_KEY = 'UfI4GzNm9vAyT7I0Nf2CKEwseNqy91AZvkI7hrSCw0otnSeDgDExgE706gdEJHWU1OajYPCVNCPEsGJRVtScxw';
+const ARK_BASE_URL = 'https://www.sophnet.com/api/open-apis/v1';
+const ARK_MODEL = 'DeepSeek-R1'; // DeepSeek-R1模型
 
 // 初始化OpenAI客户端
 const openai = new OpenAI({
@@ -74,7 +74,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    ai_provider: 'doubao_deepseek',
+    ai_provider: 'sophnet_deepseek',
     services: {
       database: 'connected',
       ai_agent: 'ready',
@@ -176,7 +176,7 @@ app.post('/api/analysis/qimen', async (req, res) => {
       paipanInfo: parsedPaipan, // 返回解析后的排盘信息
       steps: [
         { step: 1, action: '解析排盘结构', timestamp: new Date().toISOString(), summary: `已解析${parsedPaipan.排局}格局，${parsedPaipan.干支}时辰` },
-        { step: 2, action: '调用豆包DeepSeek-R1', timestamp: new Date().toISOString(), summary: `正在使用AI模型分析奇门遁甲格局` },
+        { step: 2, action: '调用SophNet DeepSeek-R1', timestamp: new Date().toISOString(), summary: `正在使用AI模型分析奇门遁甲格局` },
         { step: 3, action: '分析符号组合', timestamp: new Date().toISOString(), summary: `已分析${parsedPaipan.值符值使?.值符星宫?.[0]}星${parsedPaipan.值符值使?.値使門宫?.[0]}门组合关系` },
         { step: 4, action: '生成最终回答', timestamp: new Date().toISOString(), summary: '已根据奇门遁甲理论生成专业分析结果' }
       ]
@@ -264,7 +264,7 @@ app.post('/api/analysis/qimen/stream', async (req, res) => {
       step: 2,
       action: '连接AI模型',
       timestamp: new Date().toISOString(),
-      message: '🤖 正在连接豆包DeepSeek-R1模型...'
+      message: '🤖 正在连接SophNet DeepSeek-R1模型...'
     })}\n\n`);
 
     // 调用流式AI分析
@@ -409,7 +409,7 @@ ${JSON.stringify(parsedPaipan, null, 2)}
 
 注意：请以专业易学大师的身份直接给出分析结果，不要添加任何关于AI生成、仅供参考等免责声明。保持专业权威的语气，就像真正的奇门遁甲大师在为求测者解答。`;
 
-    console.log('调用豆包DeepSeek API (流式模式)...');
+    console.log('调用SophNet DeepSeek API (流式模式)...');
     
     // 发送AI分析开始状态
     res.write(`data: ${JSON.stringify({
@@ -463,7 +463,7 @@ ${JSON.stringify(parsedPaipan, null, 2)}
       fullContent = cleanAiResponse(fullContent);
     }
 
-    console.log('豆包API流式调用成功，响应时间:', executionTime + 'ms');
+    console.log('SophNet API流式调用成功，响应时间:', executionTime + 'ms');
     console.log('AI回答长度:', fullContent?.length, '字符，共', chunkCount, '个块');
 
     // 发送最终结果
@@ -480,14 +480,14 @@ ${JSON.stringify(parsedPaipan, null, 2)}
           paipanSummary: `${parsedPaipan.干支}，${parsedPaipan.排局}，${parsedPaipan.節氣}时节`,
           keySymbols: parsedPaipan.keyElements || ['值符', '值使'],
           criticalCombinations: parsedPaipan.keyElements?.map(el => `${el}组合`) || ['值符值使配合'],
-          aiProvider: 'doubao_deepseek_r1_stream',
+          aiProvider: 'sophnet_deepseek_r1_stream',
           model: ARK_MODEL
         }
       }
     })}\n\n`);
 
   } catch (error) {
-    console.error('豆包API流式调用失败:', error.message);
+    console.error('SophNet API流式调用失败:', error.message);
     
     // 发送错误信息
     res.write(`data: ${JSON.stringify({
@@ -555,7 +555,7 @@ ${JSON.stringify(parsedPaipan, null, 2)}
 
 注意：请以专业易学大师的身份直接给出分析结果，不要添加任何关于AI生成、仅供参考等免责声明。保持专业权威的语气，就像真正的奇门遁甲大师在为求测者解答。`;
 
-    console.log('调用豆包DeepSeek API (使用OpenAI SDK)...');
+    console.log('调用SophNet DeepSeek API (使用OpenAI SDK)...');
     
     // 使用OpenAI SDK调用
     const completion = await openai.chat.completions.create({
@@ -577,7 +577,7 @@ ${JSON.stringify(parsedPaipan, null, 2)}
       aiAnswer = cleanAiResponse(aiAnswer);
     }
 
-    console.log('豆包API调用成功，响应时间:', executionTime + 'ms');
+    console.log('SophNet API调用成功，响应时间:', executionTime + 'ms');
     console.log('AI回答长度:', aiAnswer?.length, '字符');
 
     return {
@@ -588,13 +588,13 @@ ${JSON.stringify(parsedPaipan, null, 2)}
         paipanSummary: `${parsedPaipan.干支}，${parsedPaipan.排局}，${parsedPaipan.節氣}时节`,
         keySymbols: parsedPaipan.keyElements || ['值符', '值使'],
         criticalCombinations: parsedPaipan.keyElements?.map(el => `${el}组合`) || ['值符值使配合'],
-        aiProvider: 'doubao_deepseek_r1',
+        aiProvider: 'sophnet_deepseek_r1',
         model: ARK_MODEL
       }
     };
 
   } catch (error) {
-    console.error('豆包API调用失败:', error.message);
+    console.error('SophNet API调用失败:', error.message);
     console.error('错误详情:', error);
     
     // API调用失败时使用备用分析
@@ -655,7 +655,7 @@ app.listen(PORT, '0.0.0.0', () => {
 📡 本地地址: http://localhost:${PORT}
 🌐 公网地址: http://101.201.148.8:${PORT}
 🔮 健康检查: http://101.201.148.8:${PORT}/health
-🤖 AI模型: 豆包 DeepSeek-R1-250528
+🤖 AI模型: SophNet DeepSeek-R1
 📚 数据库: 模拟数据
 
 ✨ 准备接收奇门遁甲分析请求...

@@ -33,6 +33,13 @@
             </span>
           </button>
         </div>
+        
+        <!-- 流式AI分析组件 -->
+        <StreamAnalysis 
+          :panData="panData" 
+          :questionValue="questionValue"
+          @analysisComplete="handleStreamAnalysisComplete"
+        />
     </div>
 
     <!-- AI分析结果区域 -->
@@ -153,6 +160,7 @@ import { ref, onMounted, watch } from "vue";
 import dayjs from 'dayjs';
 import Qimen from '../qimendunjia/index.js'
 import QimenItem from '../components/QimenItem.vue'
+import StreamAnalysis from '../components/StreamAnalysis.vue'
 import { useQimenStore } from "../stores/index";
 import { useQimenInfoStore } from "../stores/qimenInfoStore";
 import { DatePicker, TimePicker } from 'ant-design-vue';
@@ -415,6 +423,31 @@ async function aiAnalysis() {
   } finally {
     isAnalyzing.value = false;
     console.log('🎉 AI分析流程结束');
+  }
+}
+
+// 处理流式分析完成事件
+function handleStreamAnalysisComplete(result) {
+  console.log('🎉 流式分析完成:', result);
+  
+  // 可以选择将流式分析结果也保存到analysisResult中
+  // 这样用户可以看到两种分析结果
+  if (result && result.answer) {
+    // 创建一个流式分析结果对象
+    const streamResult = {
+      answer: result.answer,
+      confidence: result.confidence || 0.92,
+      executionTime: result.executionTime,
+      type: 'stream_analysis'
+    };
+    
+    // 可以选择替换现有结果或添加为新的分析结果
+    // analysisResult.value = streamResult;
+    
+    console.log('📊 流式分析统计:');
+    console.log('- 分析时长:', Math.round((result.executionTime || 0) / 1000), '秒');
+    console.log('- 内容长度:', result.answer?.length || 0, '字符');
+    console.log('- 置信度:', Math.round((result.confidence || 0.92) * 100), '%');
   }
 }
 
