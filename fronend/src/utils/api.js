@@ -38,9 +38,17 @@ export const API_ENDPOINTS = {
   // 奇门遁甲分析
   QIMEN_ANALYSIS: `${API_BASE_URL}/api/analysis/qimen`,
   
+  // 🚀 新增：流式分析端点
+  QIMEN_ANALYSIS_STREAM: `${API_BASE_URL}/api/analysis/qimen/stream`,
+  
   // 🔧 新增：获取所有可能的分析端点
   getAllAnalysisEndpoints: () => {
     return getBackupServers().map(server => `${server}/api/analysis/qimen`);
+  },
+  
+  // 🚀 新增：获取所有可能的流式分析端点
+  getAllStreamEndpoints: () => {
+    return getBackupServers().map(server => `${server}/api/analysis/qimen/stream`);
   },
   
   // 排盘API

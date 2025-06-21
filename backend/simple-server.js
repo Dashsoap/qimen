@@ -60,6 +60,7 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       analysis: '/api/analysis/qimen',
+      analysisStream: '/api/analysis/qimen/stream',
       paipan: '/api/qimen/paipan'
     },
     server: '101.201.148.8:3001',
@@ -124,7 +125,7 @@ app.post('/api/qimen/paipan', (req, res) => {
   });
 });
 
-// AI分析API
+// AI分析API (普通版本)
 app.post('/api/analysis/qimen', async (req, res) => {
   try {
     // 检查请求体是否存在
@@ -176,7 +177,7 @@ app.post('/api/analysis/qimen', async (req, res) => {
       steps: [
         { step: 1, action: '解析排盘结构', timestamp: new Date().toISOString(), summary: `已解析${parsedPaipan.排局}格局，${parsedPaipan.干支}时辰` },
         { step: 2, action: '调用豆包DeepSeek-R1', timestamp: new Date().toISOString(), summary: `正在使用AI模型分析奇门遁甲格局` },
-        { step: 3, action: '分析符号组合', timestamp: new Date().toISOString(), summary: `已分析${parsedPaipan.值符值使?.值符星宫?.[0]}星${parsedPaipan.值符值使?.值使門宫?.[0]}门组合关系` },
+        { step: 3, action: '分析符号组合', timestamp: new Date().toISOString(), summary: `已分析${parsedPaipan.值符值使?.值符星宫?.[0]}星${parsedPaipan.值符值使?.値使門宫?.[0]}门组合关系` },
         { step: 4, action: '生成最终回答', timestamp: new Date().toISOString(), summary: '已根据奇门遁甲理论生成专业分析结果' }
       ]
     });
@@ -188,6 +189,106 @@ app.post('/api/analysis/qimen', async (req, res) => {
       error: 'AI分析失败',
       message: error.message || '服务器内部错误'
     });
+  }
+});
+
+// AI分析API (流式版本) - 实时响应，不需要等待全部内容
+app.post('/api/analysis/qimen/stream', async (req, res) => {
+  try {
+    // 检查请求体是否存在
+    if (!req.body) {
+      console.error('请求体为空');
+      return res.status(400).json({
+        success: false,
+        error: '请求体为空',
+        message: '请确保发送了有效的JSON数据'
+      });
+    }
+
+    const { question, paipanData } = req.body;
+    
+    // 验证必要参数
+    if (!question) {
+      console.error('缺少question参数');
+      return res.status(400).json({
+        success: false,
+        error: '缺少问题参数',
+        message: '请提供要分析的问题'
+      });
+    }
+
+    if (!paipanData) {
+      console.error('缺少paipanData参数');
+      return res.status(400).json({
+        success: false,
+        error: '缺少排盘数据',
+        message: '请提供奇门遁甲排盘数据'
+      });
+    }
+    
+    console.log('收到流式AI分析请求:', question);
+    
+    // 设置SSE响应头
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+    
+    const sessionId = 'session-' + Date.now();
+    
+    // 发送初始化消息
+    res.write(`data: ${JSON.stringify({
+      type: 'init',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      message: '🔮 正在启动奇门遁甲AI分析...'
+    })}\n\n`);
+
+    // 解析排盘数据
+    const parsedPaipan = parsePaipanData(paipanData);
+    
+    // 发送排盤解析状态
+    res.write(`data: ${JSON.stringify({
+      type: 'step',
+      step: 1,
+      action: '解析排盘结构',
+      timestamp: new Date().toISOString(),
+      message: `📊 已解析${parsedPaipan.排局}格局，${parsedPaipan.干支}时辰`,
+      paipanInfo: parsedPaipan
+    })}\n\n`);
+
+    // 发送AI调用状态
+    res.write(`data: ${JSON.stringify({
+      type: 'step',
+      step: 2,
+      action: '连接AI模型',
+      timestamp: new Date().toISOString(),
+      message: '🤖 正在连接豆包DeepSeek-R1模型...'
+    })}\n\n`);
+
+    // 调用流式AI分析
+    await callDeepSeekAPIStream(question, parsedPaipan, res, sessionId);
+    
+    // 发送完成消息
+    res.write(`data: ${JSON.stringify({
+      type: 'complete',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      message: '✅ 奇门遁甲分析完成'
+    })}\n\n`);
+    
+    res.end();
+    
+  } catch (error) {
+    console.error('流式AI分析错误:', error);
+    res.write(`data: ${JSON.stringify({
+      type: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'AI分析失败',
+      message: error.message || '服务器内部错误'
+    })}\n\n`);
+    res.end();
   }
 });
 
@@ -261,6 +362,152 @@ function parsePaipanData(paipanData) {
       節氣: '未知节气',
       keyElements: ['数据异常']
     };
+  }
+}
+
+// 调用豆包DeepSeek API进行流式AI分析
+async function callDeepSeekAPIStream(question, parsedPaipan, res, sessionId) {
+  const startTime = Date.now();
+  
+  try {
+    // 构建专业的奇门遁甲分析提示词
+    const systemPrompt = `你是一位精通奇门遁甲的专业易学大师，拥有深厚的传统文化底蕴和丰富的实战经验。请基于提供的奇门遁甲排盘数据，为用户的问题提供专业、准确、实用的分析解答。
+
+分析要求：
+1. 严格基于提供的排盘数据进行分析
+2. 解读要专业且通俗易懂
+3. 包含时局分析、格局解读、趋势预测
+4. 给出具体可行的建议
+5. 语言要古雅而不失现代感
+6. 直接给出分析结果，不要添加任何免责声明或生成说明
+7. 以专业易学大师的身份回答，保持权威性和专业性`;
+
+    const userPrompt = `请分析以下奇门遁甲排盘，回答用户问题：
+
+【用户问题】
+${question}
+
+【排盘数据】
+干支：${parsedPaipan.干支 || '未提供'}
+排局：${parsedPaipan.排局 || '未提供'}
+节气：${parsedPaipan.節氣 || '未提供'}
+旬空：${parsedPaipan.旬空?.日空 || '未知'}、${parsedPaipan.旬空?.時空 || '未知'}
+
+值符值使：
+${parsedPaipan.值符值使?.值符星宫 ? `值符：${parsedPaipan.值符值使.值符星宫[0]}星落${parsedPaipan.值符值使.值符星宫[1]}宫` : '值符信息未提供'}
+${parsedPaipan.值符值使?.值使門宫 ? `值使：${parsedPaipan.值符值使.值使門宫[0]}门落${parsedPaipan.值符值使.值使門宫[1]}宫` : '值使信息未提供'}
+
+九宫格局：
+${JSON.stringify(parsedPaipan, null, 2)}
+
+请提供专业的奇门遁甲分析，包括：
+1. 时局概况分析
+2. 格局特点解读  
+3. 针对问题的具体分析
+4. 趋势预测和建议
+5. 注意事项
+
+注意：请以专业易学大师的身份直接给出分析结果，不要添加任何关于AI生成、仅供参考等免责声明。保持专业权威的语气，就像真正的奇门遁甲大师在为求测者解答。`;
+
+    console.log('调用豆包DeepSeek API (流式模式)...');
+    
+    // 发送AI分析开始状态
+    res.write(`data: ${JSON.stringify({
+      type: 'step',
+      step: 3,
+      action: '开始AI分析',
+      timestamp: new Date().toISOString(),
+      message: '💫 AI大师正在解读奇门遁甲格局...'
+    })}\n\n`);
+    
+    // 使用OpenAI SDK调用流式API
+    const stream = await openai.chat.completions.create({
+      model: ARK_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+      top_p: 0.9,
+      stream: true
+    });
+
+    let fullContent = '';
+    let chunkCount = 0;
+    
+    // 处理流式响应
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      
+      if (content) {
+        fullContent += content;
+        chunkCount++;
+        
+        // 发送内容块
+        res.write(`data: ${JSON.stringify({
+          type: 'content',
+          sessionId: sessionId,
+          timestamp: new Date().toISOString(),
+          content: content,
+          fullContent: fullContent,
+          chunkIndex: chunkCount
+        })}\n\n`);
+      }
+    }
+
+    const executionTime = Date.now() - startTime;
+    
+    // 过滤掉可能的免责声明
+    if (fullContent) {
+      fullContent = cleanAiResponse(fullContent);
+    }
+
+    console.log('豆包API流式调用成功，响应时间:', executionTime + 'ms');
+    console.log('AI回答长度:', fullContent?.length, '字符，共', chunkCount, '个块');
+
+    // 发送最终结果
+    res.write(`data: ${JSON.stringify({
+      type: 'final',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      analysis: {
+        answer: fullContent,
+        confidence: 0.92,
+        executionTime: executionTime,
+        chunkCount: chunkCount,
+        metadata: {
+          paipanSummary: `${parsedPaipan.干支}，${parsedPaipan.排局}，${parsedPaipan.節氣}时节`,
+          keySymbols: parsedPaipan.keyElements || ['值符', '值使'],
+          criticalCombinations: parsedPaipan.keyElements?.map(el => `${el}组合`) || ['值符值使配合'],
+          aiProvider: 'doubao_deepseek_r1_stream',
+          model: ARK_MODEL
+        }
+      }
+    })}\n\n`);
+
+  } catch (error) {
+    console.error('豆包API流式调用失败:', error.message);
+    
+    // 发送错误信息
+    res.write(`data: ${JSON.stringify({
+      type: 'error',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      error: '流式AI分析失败',
+      message: error.message || '服务器内部错误'
+    })}\n\n`);
+    
+    // 使用备用分析
+    const fallbackAnalysis = generateFallbackAnalysis(question, parsedPaipan, Date.now() - startTime);
+    
+    res.write(`data: ${JSON.stringify({
+      type: 'fallback',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      analysis: fallbackAnalysis,
+      message: '使用备用分析模式'
+    })}\n\n`);
   }
 }
 
