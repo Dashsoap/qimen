@@ -1,6 +1,6 @@
-import Config from "./config";
-import Calendar from "./calendar";
-import Wannianli from "./wannianli";
+import Config from "./config.js";
+import Calendar from "./calendar.js";
+import Wannianli from "./wannianli.js";
 class Qimen {
   constructor(year, month, day, hour) {
     this.year = year;
@@ -46,6 +46,7 @@ class Qimen {
       地支: this.dizhi_pan(),
     };
     this.g = this.gpan();
+    this.pan = this.p; // 時家奇門的基础信息
     this.overall = { 時家奇門: this.pan, 金函玉鏡: this.g };
   }
 
@@ -564,7 +565,7 @@ class Qimen {
 
   //金函玉鏡 日家奇門
   gpan() {
-    let start_jia = Config.jiazi().space(0, 10);
+    let start_jia = Config.jiazi().slice(0, 10);
     //console.log("start_jia", start_jia);
     let find_xun = Config.zip_dict(
       start_jia.map((i) => Config.new_list(Config.jiazi(), i).slice(0, 10)),
@@ -573,48 +574,32 @@ class Qimen {
     //console.log("find_xun", find_xun);
     let dgz = this.gangzhi()[2];
     let xun = Config.multi_key_dict_get(find_xun, dgz);
+    if (!xun) xun = start_jia[0]; // 默认使用第一个甲
     //console.log("xun", xun);
     let start_gong_d = { 冬至: "艮離坎坤震巽", 夏至: "坤離巽坤離兌" };
     let yy_dun = { 冬至: "陽遁", 夏至: "陰遁" };
 
-    let start_gong =
-      start_gong_d[
-        Config.multi_key_dict_get(
-          Object.assign(
-            Config.jieqi_all.slice(0, 12).reduce((obj, cur, index) => {
-              obj[cur] = "冬至";
-              return obj;
-            }, {}),
-            Config.jieqi_all.slice(13, 24).reduce((obj, cur, index) => {
-              obj[cur] = "夏至";
-              return obj;
-            }, {})
-          ),
-          this.find_jieqi()
-        )
-      ];
+    let jieqi_key = Config.multi_key_dict_get(
+      Object.assign(
+        Config.jieqi_all.slice(0, 12).reduce((obj, cur, index) => {
+          obj[cur] = "冬至";
+          return obj;
+        }, {}),
+        Config.jieqi_all.slice(13, 24).reduce((obj, cur, index) => {
+          obj[cur] = "夏至";
+          return obj;
+        }, {})
+      ),
+      this.find_jieqi()
+    );
+    let start_gong = start_gong_d[jieqi_key] || "艮離坎坤震巽"; // 默认值
 
-    let yy =
-      yy_dun[
-        Config.multi_key_dict_get(
-          Object.assign(
-            Config.jieqi_all.slice(0, 12).reduce((obj, cur, index) => {
-              obj[cur] = "冬至";
-              return obj;
-            }, {}),
-            Config.jieqi_all.slice(13, 24).reduce((obj, cur, index) => {
-              obj[cur] = "夏至";
-              return obj;
-            }, {})
-          ),
-          this.find_jieqi()
-        )
-      ];
+    let yy = yy_dun[jieqi_key] || "陽遁"; // 默认阳遁
 
-    let gong = Config.zip_dict(start_jia, start_gong)[xun];
+    let gong = Config.zip_dict(start_jia, start_gong)[xun] || start_gong[0];
     let triple_list = Config.range(0, 21).map((i) => i * 3);
     let b = [];
-    for (let i of Config.range(0, Config.len(triple_list))) {
+    for (let i of Config.range(0, Config.len(triple_list) - 1)) {
       let a = Config.jiazi().slice(triple_list[i], triple_list[i + 1]);
       if (Config.len(a) > 0) b.push(a);
     }
@@ -631,7 +616,7 @@ class Qimen {
       Config.new_list(
         Config.eight_gua,
         Object.assign(Config.zip_dict(close_ten_day, a_gong), {
-          [close_ten_day[-1]]: a_gong[0],
+          [close_ten_day[close_ten_day.length - 1]]: a_gong[0],
         })[dgz]
       ),
       Config.golen_d
@@ -640,7 +625,7 @@ class Qimen {
       Config.new_list(
         Config.eight_gua,
         Object.assign(Config.zip_dict(close_ten_day, c_gong), {
-          [close_ten_day[-1]]: a_gong[0],
+          [close_ten_day[close_ten_day.length - 1]]: a_gong[0],
         })[dgz]
       ),
       Config.golen_d
@@ -651,7 +636,7 @@ class Qimen {
       let c = Config.zip_dict(Config.new_list(f[yy], i), Config.door_r);
       g.push(c);
     }
-    let door = Config.multi_key_dict_get(Config.zip_dict(b, g, false), dgz);
+    let door = Config.multi_key_dict_get(Config.zip_dict(b, g), dgz);
     return {
       局: yy + dgz + "日",
       鶴神: this.crane_god()[dgz],

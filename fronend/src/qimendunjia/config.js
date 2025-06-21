@@ -24,6 +24,7 @@ export default class Config {
   }
   //假如xs，ys不等，就是需要无限迭代的时候。比如xs太多的时候，ys需要跟上
   static zip_dict(xs, ys) {
+    if (!xs || !ys) return {}; // 安全检查
     if (xs.length > ys.length) {
       let new_ys = [];
       for (let i of new Array(Math.ceil(xs.length / ys.length)).fill(1)) {
@@ -86,6 +87,7 @@ export default class Config {
 
   static new_list_r(olist, o) {
     let zhihead_code = olist.findIndex((item) => item == o);
+    if (zhihead_code === -1) zhihead_code = 0; // 默认从第一个元素开始
     let res1 = [];
     for (let i of this.range(0, this.len(olist))) {
       res1.push(olist[this.mod(zhihead_code, this.len(olist))]);
@@ -96,6 +98,7 @@ export default class Config {
 
   static new_list(olist, o) {
     let zhihead_code = olist.findIndex((item) => item == o);
+    if (zhihead_code === -1) zhihead_code = 0; // 默认从第一个元素开始
     let res1 = [];
     for (let i of this.range(0, this.len(olist))) {
       res1.push(olist[this.mod(zhihead_code, this.len(olist))]);
