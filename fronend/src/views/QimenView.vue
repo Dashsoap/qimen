@@ -24,12 +24,9 @@
         </div>
       </div>
               <div class="action-buttons">
-          <button class="dao-button" @click="paipan()">
-            <span class="dao-button-text">排盘</span>
-          </button>
-          <button class="dao-button ai-button" @click="aiAnalysis()" :disabled="!panData || isAnalyzing">
+          <button class="dao-button main-analysis-button" @click="startAnalysis()" :disabled="isAnalyzing">
             <span class="dao-button-text">
-              {{ isAnalyzing ? 'AI分析中...' : 'AI智能分析' }}
+              {{ isAnalyzing ? '🔮 AI大师解卦中...' : '🎯 一键智能解卦' }}
             </span>
           </button>
         </div>
@@ -39,6 +36,7 @@
           :panData="panData" 
           :questionValue="questionValue"
           @analysisComplete="handleStreamAnalysisComplete"
+          ref="streamAnalysis"
         />
     </div>
 
@@ -193,6 +191,7 @@ const infoStore = useQimenInfoStore();
 // 🔧 移动端输入保护
 const questionInput = ref<HTMLInputElement | null>(null);
 const lastQuestionBackup = ref<string>('');
+const streamAnalysis = ref<any>(null);
 
 const { panData } = storeToRefs(store);
 
@@ -256,7 +255,66 @@ function handleInputBlur() {
   }
 }
 
-// AI分析函数 - 使用前端排盘数据
+// 一键智能解卦函数 - 整合排盘和AI分析
+async function startAnalysis() {
+  console.log('🎯 开始一键智能解卦流程...');
+  
+  // 🔧 修复移动端输入问题：使用多重备份机制
+  const questionSnapshot = questionValue.value?.trim() || '';
+  const lastBackup = lastQuestionBackup.value?.trim() || '';
+  const inputElement = questionInput.value || 
+                      document.querySelector('.dao-input') as HTMLInputElement;
+  
+  // 🔧 多重备份：从多个源获取问题内容
+  let inputBackup = questionSnapshot || lastBackup;
+  
+  if (inputElement && inputElement.value?.trim()) {
+    inputBackup = inputElement.value.trim();
+  }
+  
+  // 最终检查：确保有问题内容
+  if (!inputBackup || inputBackup.length === 0) {
+    alert('请先输入占卜问题');
+    return;
+  }
+
+  console.log('🔧 问题内容多重检查:');
+  console.log('- questionValue.value:', questionValue.value);
+  console.log('- lastQuestionBackup.value:', lastQuestionBackup.value);
+  console.log('- inputElement.value:', inputElement?.value);
+  console.log('- 最终使用:', inputBackup);
+
+  isAnalyzing.value = true;
+  analysisResult.value = null;
+
+  // 第一步：如果没有排盘数据，先排盘
+  if (!panData.value) {
+    console.log('📊 正在自动排盘...');
+    await paipan();
+  }
+
+  // 第二步：调用AI流式分析
+  try {
+    if (streamAnalysis.value && streamAnalysis.value.startStreamAnalysis) {
+      console.log('🚀 启动AI流式分析...');
+      await streamAnalysis.value.startStreamAnalysis();
+    } else {
+      console.error('❌ StreamAnalysis组件或方法未找到');
+      console.log('- streamAnalysis.value:', streamAnalysis.value);
+      if (streamAnalysis.value) {
+        console.log('- 可用方法:', Object.keys(streamAnalysis.value));
+      }
+      alert('流式分析组件未正确加载，请刷新页面重试');
+    }
+  } catch (error) {
+    console.error('❌ 启动AI流式分析失败:', error);
+    alert('AI分析启动失败: ' + error.message);
+  }
+
+  isAnalyzing.value = false;
+}
+
+// 传统AI分析函数 - 保留作为备用
 async function aiAnalysis() {
   console.log('🎯 开始AI分析流程...');
   
@@ -1483,6 +1541,50 @@ onMounted(() => {
   font-size: 0.9rem;
   flex: 1;
   font-family: "FangSong", "STKaiti", serif;
+}
+
+/* 主要分析按钮样式 */
+.dao-button.main-analysis-button {
+  background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 100%);
+  box-shadow: 0 8px 32px rgba(255, 154, 86, 0.4);
+  font-size: 18px;
+  padding: 16px 32px;
+  font-weight: 600;
+  min-width: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dao-button.main-analysis-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.dao-button.main-analysis-button:hover::before {
+  left: 100%;
+}
+
+.dao-button.main-analysis-button:hover {
+  background: linear-gradient(135deg, #ff8844 0%, #ff5959 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(255, 154, 86, 0.6);
+}
+
+.dao-button.main-analysis-button:disabled {
+  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.dao-button.main-analysis-button:disabled::before {
+  display: none;
 }
 
 </style>

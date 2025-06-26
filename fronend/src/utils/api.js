@@ -54,25 +54,36 @@ export const API_ENDPOINTS = {
   // 排盘API
   QIMEN_PAIPAN: `${API_BASE_URL}/api/qimen/paipan`,
   
-  // 用户认证
+  // 用户认证 - 🔧 更新为新的认证系统端点
   AUTH_LOGIN: `${API_BASE_URL}/api/auth/login`,
   AUTH_REGISTER: `${API_BASE_URL}/api/auth/register`,
   AUTH_LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+  AUTH_PROFILE: `${API_BASE_URL}/api/auth/profile`,
   
-  // 用户信息
-  USER_PROFILE: `${API_BASE_URL}/api/user/profile`,
+  // 🆕 新增：积分系统端点
+  POINTS_GET: `${API_BASE_URL}/api/points`,
+  POINTS_TRANSACTION: `${API_BASE_URL}/api/points/transaction`,
+  
+  // 用户信息 - 🔧 更新为新的端点
+  USER_PROFILE: `${API_BASE_URL}/api/auth/profile`,
   
   // 历史记录
   ANALYSIS_HISTORY: `${API_BASE_URL}/api/analysis/history`,
   
   // 健康检查
-  HEALTH_CHECK: `${API_BASE_URL}/api/health`
+  HEALTH_CHECK: `${API_BASE_URL}/health`
 };
 
-console.log('🌐 API配置:', {
+console.log('🌐 API配置 (升级版认证系统):', {
   baseUrl: API_BASE_URL,
   isMobile: isMobile,
   isProduction: isProduction,
+  features: [
+    '✅ JWT认证系统',
+    '✅ 积分管理',
+    '✅ 安全防护',
+    '✅ AI智能分析'
+  ],
   endpoints: API_ENDPOINTS
 });
 

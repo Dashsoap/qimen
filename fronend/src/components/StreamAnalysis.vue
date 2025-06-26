@@ -1,35 +1,6 @@
 <template>
   <div class="stream-analysis-container">
-    <!-- 流式分析按钮 -->
-    <div class="stream-button-wrapper">
-      <button 
-        class="dao-button stream-button" 
-        @click="startStreamAnalysis()" 
-        :disabled="!panData || isStreaming"
-      >
-        <span class="dao-button-text">
-          {{ isStreaming ? '🔄 AI实时分析中...' : '🚀 AI流式分析' }}
-        </span>
-      </button>
-      
-      <button 
-        v-if="isStreaming" 
-        class="dao-button stop-button" 
-        @click="stopStreamAnalysis()"
-      >
-        <span class="dao-button-text">⏹️ 停止分析</span>
-      </button>
-      
-      <!-- 🔧 调试按钮 -->
-      <button 
-        v-if="!isStreaming" 
-        class="dao-button debug-button" 
-        @click="testDisplay()"
-        style="background: #38b2ac;"
-      >
-        <span class="dao-button-text">🧪 测试显示</span>
-      </button>
-    </div>
+    <!-- 隐藏按钮，由父组件调用 -->
 
     <!-- 流式分析结果区域 -->
     <div class="stream-result-section" v-if="showStreamResult">
@@ -242,12 +213,19 @@ async function startFetchStream(questionText: string) {
 
   console.log('📡 发送流式请求:', requestData);
 
+  // 获取认证token
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('用户未登录，请先登录');
+  }
+
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(requestData)
     });
@@ -485,6 +463,14 @@ function testDisplay() {
 // 组件销毁时清理
 onUnmounted(() => {
   stopStreamAnalysis();
+});
+
+// 暴露方法给父组件
+defineExpose({
+  startStreamAnalysis,
+  stopStreamAnalysis,
+  testDisplay,
+  resetStreamState
 });
 </script>
 

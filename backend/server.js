@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -10,22 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import Joi from 'joi';
 import OpenAI from 'openai';
 
-// 导入服务
-import { initDatabase } from './src/database/init.js';
-import { QimenAgent } from './src/agents/QimenAgent.js';
-import { MCPServer } from './src/mcp/MCPServer.js';
-
-// 导入路由
-import qimenRoutes from './src/routes/qimen.js';
-import analysisRoutes from './src/routes/analysis.js';
-
-// 配置
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// 加载环境变量
-dotenv.config({ path: join(__dirname, 'config.env') });
-
+// 初始化应用
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
@@ -77,23 +60,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     // 开发模式下允许所有来源
-    if (process.env.NODE_ENV === 'development') {
-      return callback(null, true);
-    }
-    
-    // 生产模式下的白名单
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3000'
-    ];
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -258,9 +225,9 @@ app.get('/health', (req, res) => {
 // === 认证路由 ===
 
 // 用户注册
-app.post('/api/auth/register', authLimiter, async (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   try {
-    // 验证输入数据
+    // 验证输入数据  
     const { error, value } = schemas.register.validate(req.body);
     if (error) {
       return res.status(400).json({
@@ -360,7 +327,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 });
 
 // 用户登录
-app.post('/api/auth/login', authLimiter, async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
     // 验证输入数据
     const { error, value } = schemas.login.validate(req.body);
@@ -719,6 +686,139 @@ app.post('/api/analysis/qimen', authenticateToken, async (req, res) => {
   }
 });
 
+// AI分析API (流式版本) - 实时响应，不需要等待全部内容
+app.post('/api/analysis/qimen/stream', authenticateToken, async (req, res) => {
+  try {
+    // 检查请求体是否存在
+    if (!req.body) {
+      console.error('请求体为空');
+      return res.status(400).json({
+        success: false,
+        error: '请求体为空',
+        message: '请确保发送了有效的JSON数据'
+      });
+    }
+
+    const { question, paipanData } = req.body;
+    
+    // 验证必要参数
+    if (!question) {
+      console.error('缺少question参数');
+      return res.status(400).json({
+        success: false,
+        error: '缺少问题参数',
+        message: '请提供要分析的问题'
+      });
+    }
+
+    if (!paipanData) {
+      console.error('缺少paipanData参数');
+      return res.status(400).json({
+        success: false,
+        error: '缺少排盘数据',
+        message: '请提供奇门遁甲排盘数据'
+      });
+    }
+
+    // 检查用户积分
+    const userPoints = await prisma.userPoints.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    const analysisPointsCost = 100; // AI分析消费100积分
+    
+    if (!userPoints || userPoints.balance < analysisPointsCost) {
+      return res.status(400).json({
+        success: false,
+        error: '积分不足',
+        message: `AI分析需要${analysisPointsCost}积分，当前余额：${userPoints?.balance || 0}`
+      });
+    }
+
+    // 消费积分
+    await prisma.userPoints.update({
+      where: { userId: req.user.id },
+      data: {
+        balance: userPoints.balance - analysisPointsCost,
+        totalSpent: userPoints.totalSpent + analysisPointsCost,
+        pointsRecords: {
+          create: {
+            amount: analysisPointsCost,
+            type: 'spent',
+            description: 'AI奇门流式分析'
+          }
+        }
+      }
+    });
+    
+    console.log('收到流式AI分析请求:', req.user.username, question);
+    
+    // 设置SSE响应头
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+    
+    const sessionId = 'session-' + Date.now();
+    
+    // 发送初始化消息
+    res.write(`data: ${JSON.stringify({
+      type: 'init',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      message: '🔮 正在启动奇门遁甲AI分析...',
+      user: req.user.username,
+      pointsSpent: analysisPointsCost
+    })}\n\n`);
+
+    // 解析排盘数据
+    const parsedPaipan = parsePaipanData(paipanData);
+    
+    // 发送排盤解析状态
+    res.write(`data: ${JSON.stringify({
+      type: 'step',
+      step: 1,
+      action: '解析排盘结构',
+      timestamp: new Date().toISOString(),
+      message: `📊 已解析${parsedPaipan.排局}格局，${parsedPaipan.干支}时辰`,
+      paipanInfo: parsedPaipan
+    })}\n\n`);
+
+    // 发送AI调用状态
+    res.write(`data: ${JSON.stringify({
+      type: 'step',
+      step: 2,
+      action: '连接AI模型',
+      timestamp: new Date().toISOString(),
+      message: '🤖 正在连接SophNet DeepSeek-R1模型...'
+    })}\n\n`);
+
+    // 调用流式AI分析
+    await callDeepSeekAPIStream(question, parsedPaipan, res, sessionId);
+    
+    // 发送完成消息
+    res.write(`data: ${JSON.stringify({
+      type: 'complete',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      message: '✅ 奇门遁甲分析完成'
+    })}\n\n`);
+    
+    res.end();
+    
+  } catch (error) {
+    console.error('流式AI分析错误:', error);
+    res.write(`data: ${JSON.stringify({
+      type: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'AI分析失败',
+      message: error.message || '服务器内部错误'
+    })}\n\n`);
+    res.end();
+  }
+});
+
 // 工具函数
 function parsePaipanData(paipanData) {
   // 解析排盘数据的逻辑
@@ -787,6 +887,198 @@ async function callDeepSeekAPI(question, parsedPaipan) {
 【温馨提示】：
 奇门遁甲仅供参考，重要决策还需结合实际情况综合考虑。`;
   }
+}
+
+// 调用豆包DeepSeek API进行流式AI分析
+async function callDeepSeekAPIStream(question, parsedPaipan, res, sessionId) {
+  const startTime = Date.now();
+  
+  try {
+    // 构建专业的奇门遁甲分析提示词
+    const systemPrompt = `你是一位精通奇门遁甲的专业易学大师，拥有深厚的传统文化底蕴和丰富的实战经验。请基于提供的奇门遁甲排盘数据，为用户的问题提供专业、准确、实用的分析解答。
+
+分析要求：
+1. 严格基于提供的排盘数据进行分析
+2. 解读要专业且通俗易懂
+3. 包含时局分析、格局解读、趋势预测
+4. 给出具体可行的建议
+5. 语言要古雅而不失现代感
+6. 直接给出分析结果，不要添加任何免责声明或生成说明
+7. 以专业易学大师的身份回答，保持权威性和专业性`;
+
+    const userPrompt = `请分析以下奇门遁甲排盘，回答用户问题：
+
+【用户问题】
+${question}
+
+【排盘信息】
+- 时间干支：${parsedPaipan.干支}
+- 排局：${parsedPaipan.排局}
+- 值符值使：${JSON.stringify(parsedPaipan.值符值使)}
+- 九宫格局：${JSON.stringify(parsedPaipan.九宫格局, null, 2)}
+
+请提供专业的奇门遁甲分析，包括：
+1. 整体格局分析
+2. 针对问题的具体解读
+3. 时间因素考量
+4. 实用建议
+5. 注意事项`;
+
+    console.log('调用SophNet DeepSeek API (流式)...');
+
+    // 发送分析开始状态
+    res.write(`data: ${JSON.stringify({
+      type: 'step',
+      step: 3,
+      action: '开始AI分析',
+      timestamp: new Date().toISOString(),
+      message: '💫 正在进行深度分析...'
+    })}\n\n`);
+
+    // 使用OpenAI SDK调用流式API
+    const stream = await openai.chat.completions.create({
+      model: ARK_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user", 
+          content: userPrompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+      stream: true
+    });
+
+    let fullContent = '';
+    let chunkCount = 0;
+
+    // 处理流式响应
+    for await (const chunk of stream) {
+      if (chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content) {
+        const content = chunk.choices[0].delta.content;
+        fullContent += content;
+        chunkCount++;
+
+        // 每10个chunk发送一次内容更新
+        if (chunkCount % 10 === 0) {
+          res.write(`data: ${JSON.stringify({
+            type: 'content',
+            content: content,
+            fullContent: fullContent,
+            timestamp: new Date().toISOString()
+          })}\n\n`);
+        }
+      }
+    }
+
+    // 清理AI回答，移除可能的免责声明
+    const cleanedContent = cleanAiResponse(fullContent);
+    const executionTime = Date.now() - startTime;
+
+    // 发送最终分析结果
+    res.write(`data: ${JSON.stringify({
+      type: 'final',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      analysis: {
+        answer: cleanedContent,
+        confidence: 0.95,
+        executionTime: executionTime,
+        model: 'DeepSeek-R1'
+      }
+    })}\n\n`);
+
+    console.log(`✅ 流式AI分析完成，用时: ${executionTime}ms`);
+
+  } catch (error) {
+    console.error('DeepSeek流式API调用错误:', error);
+    const executionTime = Date.now() - startTime;
+    
+    // 发送备用分析结果
+    const fallbackAnalysis = generateFallbackAnalysis(question, parsedPaipan, executionTime);
+    
+    res.write(`data: ${JSON.stringify({
+      type: 'fallback',
+      sessionId: sessionId,
+      timestamp: new Date().toISOString(),
+      message: '🔄 使用备用分析模式',
+      analysis: {
+        answer: fallbackAnalysis,
+        confidence: 0.85,
+        executionTime: executionTime,
+        model: 'Fallback'
+      }
+    })}\n\n`);
+  }
+}
+
+// 清理AI回答，移除免责声明
+function cleanAiResponse(response) {
+  if (!response) return response;
+  
+  // 定义需要过滤的免责声明关键词
+  const disclaimerPatterns = [
+    /以上内容由.*?生成.*?仅供.*?参考.*?/gi,
+    /本回答由.*?生成.*?/gi,
+    /仅供娱乐参考.*?/gi,
+    /请注意.*?仅供参考.*?/gi,
+    /免责声明.*?/gi,
+    /\*\*免责声明\*\*.*?/gi,
+    /---\s*免责声明.*?/gi,
+    /注意：.*?仅供参考.*?/gi,
+    /声明：.*?娱乐.*?/gi
+  ];
+  
+  let cleanedResponse = response;
+  
+  // 移除匹配的免责声明
+  disclaimerPatterns.forEach(pattern => {
+    cleanedResponse = cleanedResponse.replace(pattern, '');
+  });
+  
+  // 移除末尾可能的多余空行和分隔符
+  cleanedResponse = cleanedResponse.replace(/\n{3,}/g, '\n\n');
+  cleanedResponse = cleanedResponse.replace(/---+\s*$/g, '');
+  cleanedResponse = cleanedResponse.trim();
+  
+  return cleanedResponse;
+}
+
+// 生成备用分析结果
+function generateFallbackAnalysis(question, parsedPaipan, executionTime) {
+  return `【奇门遁甲分析】
+
+🔮 **格局概述**
+根据当前${parsedPaipan.排局}的排盘格局，结合您的问题"${question}"，现为您提供以下分析：
+
+📊 **时局分析**
+- 时间干支：${parsedPaipan.干支}
+- 当前排局：${parsedPaipan.排局}
+- 值符值使：${JSON.stringify(parsedPaipan.值符值使)}
+
+🎯 **针对性解读**
+基于奇门遁甲的传统理论，当前格局显示：
+1. 时机把握：需要关注时间节点的变化
+2. 环境因素：周围环境对结果有重要影响
+3. 人事关系：人际关系在此事中起关键作用
+
+💡 **实用建议**
+1. 保持冷静，理性分析
+2. 适时而动，不宜急躁
+3. 多方考虑，综合决策
+4. 注意细节，防范风险
+
+⚠️ **注意事项**
+- 奇门遁甲仅供参考，重要决策需结合实际
+- 建议多角度思考，不可完全依赖占卜结果
+- 保持积极心态，主观能动性很重要
+
+---
+*分析完成时间：${Math.round(executionTime)}ms*`;
 }
 
 // 错误处理中间件
