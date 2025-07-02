@@ -8,83 +8,83 @@
     </div>
 
     <div class="input-section">
-      <div class="picker-wrapper">
-        <div class="question-wrapper">
-          <label class="picker-label">占问</label>
-          <input
-            v-model="questionValue"
-            type="text"
-            class="dao-input"
-            placeholder="请输入您的占卜问题"
-            @blur="handleInputBlur"
-            @focus="handleInputFocus"
-            ref="questionInput"
-          />
-          <div class="input-hint">输入您想要占卜的具体问题</div>
-        </div>
-      </div>
-              <div class="action-buttons">
-          <button class="dao-button main-analysis-button" @click="startAnalysis()" :disabled="isAnalyzing">
-            <span class="dao-button-text">
-              {{ isAnalyzing ? '🔮 AI大师解卦中...' : '🎯 一键智能解卦' }}
-            </span>
-          </button>
-        </div>
-        
-        <!-- 流式AI分析组件 -->
-        <StreamAnalysis 
-          :panData="panData" 
-          :questionValue="questionValue"
-          @analysisComplete="handleStreamAnalysisComplete"
-          ref="streamAnalysis"
+      <div class="question-input">
+        <input
+          v-model="question"
+          type="text"
+          class="question-input-field"
+          placeholder="请输入占卜问题"
+          ref="questionInput"
+          @compositionstart="isComposing = true"
+          @compositionend="isComposing = false"
         />
-    </div>
-
-    <!-- AI分析结果区域 -->
-    <div class="ai-result-section" v-if="analysisResult">
-      <div class="ai-header">
-        <div class="ai-title">🔮 AI智能分析结果</div>
-        <div class="ai-subtitle">基于奇门遁甲排盘数据</div>
+        <button class="analyze-btn" @click="analyze" :disabled="loading">
+          {{ loading ? '启动中...' : '🔮 AI流式分析' }}
+        </button>
       </div>
       
-      <div class="question-display">
-        <div class="question-title">问题：</div>
-        <div class="question-content">{{ questionValue }}</div>
+      <!-- 功能按钮 -->
+      <div class="function-buttons">
+        <router-link to="/history" class="function-btn history-btn" title="查看历史记录">
+          <span class="btn-icon">📜</span>
+          <span class="btn-text">历史记录</span>
+        </router-link>
+        <router-link to="/favorites" class="function-btn favorites-btn" title="查看收藏夹">
+          <span class="btn-icon">⭐</span>
+          <span class="btn-text">我的收藏</span>
+        </router-link>
       </div>
+      
+      <!-- 流式AI分析组件 -->
+      <StreamAnalysis 
+        :panData="panData" 
+        :questionValue="question"
+        @analysisComplete="handleStreamAnalysisComplete"
+        ref="streamAnalysis"
+      />
+    </div>
 
-      <div class="analysis-content">
-        <div class="analysis-answer">
-          <div class="answer-title">🎯 分析结果</div>
-          <div class="answer-text">{{ analysisResult.answer }}</div>
-        </div>
+    <!-- 分析结果 -->
+    <div class="result-display" v-if="result">
+      <div class="result-header">
+        <h3>分析结果</h3>
+      </div>
+      <div class="result-content">
+        {{ result }}
       </div>
     </div>
 
     <div class="result-section" v-if="panData">
-      <div class="question-display" v-if="questionValue">
+      <div class="question-display" v-if="question">
         <div class="question-title">问题：</div>
-        <div class="question-content">{{ questionValue }}</div>
+        <div class="question-content">{{ question }}</div>
       </div>
-      <div class="data-grid">
-        <div class="data-item">
-          <div class="data-label">干支：</div>
-          <div class="data-value">{{ panData.干支 }}</div>
+      <div class="data-compact">
+        <div class="data-row">
+          <span class="data-pair">
+            <span class="data-label">干支：</span>
+            <span class="data-value">{{ panData.干支 }}</span>
+          </span>
+          <span class="data-pair">
+            <span class="data-label">節氣：</span>
+            <span class="data-value">{{ panData.節氣 }}</span>
+          </span>
+          <span class="data-pair">
+            <span class="data-label">排局：</span>
+            <span class="data-value">{{ panData.排局 }}</span>
+          </span>
         </div>
-        <div class="data-item">
-          <div class="data-label">節氣：</div>
-          <div class="data-value">{{ panData.節氣 }}</div>
+        <div class="data-row" v-if="panData.旬空">
+          <span class="data-pair" v-for="(item, key) in panData.旬空" :key="`xunkong-${key}`">
+            <span class="data-label">{{ key }}：</span>
+            <span class="data-value">{{ item }}</span>
+          </span>
         </div>
-        <div class="data-item">
-          <div class="data-label">排局：</div>
-          <div class="data-value">{{ panData.排局 }}</div>
-        </div>
-        <div class="data-item" v-for="(item, key) in panData.旬空" :key="`xunkong-${key}`">
-          <div class="data-label">{{ key }}：</div>
-          <div class="data-value">{{ item }}</div>
-        </div>
-        <div class="data-item" v-for="(item, key) in panData.值符值使" :key="`zhifu-${key}`">
-          <div class="data-label">{{ key }}：</div>
-          <div class="data-value">{{ item }}</div>
+        <div class="data-row" v-if="panData.值符值使">
+          <span class="data-pair" v-for="(item, key) in panData.值符值使" :key="`zhifu-${key}`">
+            <span class="data-label">{{ key }}：</span>
+            <span class="data-value">{{ item }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -152,566 +152,354 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import locale from 'ant-design-vue/es/date-picker/locale/zh_CN';
-import { ref, onMounted, watch } from "vue";
-import dayjs from 'dayjs';
+<script setup>
+import { ref, onMounted } from 'vue'
+import dayjs from 'dayjs'
 import Qimen from '../qimendunjia/index.js'
 import QimenItem from '../components/QimenItem.vue'
 import StreamAnalysis from '../components/StreamAnalysis.vue'
-import { useQimenStore } from "../stores/index";
-import { useQimenInfoStore } from "../stores/qimenInfoStore";
-import { DatePicker, TimePicker } from 'ant-design-vue';
-import 'dayjs/locale/zh-cn';
-import type { Dayjs } from 'dayjs';
-import { storeToRefs } from 'pinia';
-import { API_ENDPOINTS } from '../utils/api.js';
-import axios from 'axios';
+import { useQimenStore } from "../stores/index"
+import { useQimenInfoStore } from "../stores/qimenInfoStore"
+import { storeToRefs } from 'pinia'
 
-dayjs.locale('zh-cn');
+const store = useQimenStore()
+const infoStore = useQimenInfoStore()
+const { panData } = storeToRefs(store)
 
-// 定义 panData 的类型接口
-interface PanDataType {
-    干支?: string;
-    節氣?: string;
-    排局?: string;
-    旬空?: Record<string, string>;
-    值符值使?: Record<string, string>;
-    [key: string]: any;
-}
+// 简单的响应式变量
+const question = ref('')
+const loading = ref(false)
+const result = ref('')
+const questionInput = ref(null)
+const isComposing = ref(false)
+const streamAnalysis = ref(null)
 
-const dateValue = ref<Dayjs>();
-const timeValue = ref<Dayjs>();
-const questionValue = ref<string>('');
-const isAnalyzing = ref<boolean>(false);
-const analysisResult = ref<any>(null);
-const store = useQimenStore();
-const infoStore = useQimenInfoStore();
-
-// 🔧 移动端输入保护
-const questionInput = ref<HTMLInputElement | null>(null);
-const lastQuestionBackup = ref<string>('');
-const streamAnalysis = ref<any>(null);
-
-const { panData } = storeToRefs(store);
-
-// 初始化时自动排盘
-onMounted(() => {
-  // 自动排盘 - 恢复原有的进入页面自动排盘功能
-  paipan();
-  
-  // 🔧 移动端输入保护：监听输入值变化
-  watch(questionValue, (newValue) => {
-    if (newValue && newValue.trim()) {
-      lastQuestionBackup.value = newValue.trim();
-      console.log('📝 输入值变化备份:', newValue.trim());
-    }
-  }, { immediate: true });
-  
-  // 🔧 移动端保护：防止页面失焦时输入丢失
-  if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-    console.log('📱 检测到移动端，启用输入保护机制');
-    
-    // 监听页面可见性变化
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        // 页面隐藏时保存输入
-        if (questionValue.value && questionValue.value.trim()) {
-          lastQuestionBackup.value = questionValue.value.trim();
-          console.log('📱 页面隐藏，保存输入:', lastQuestionBackup.value);
-        }
-      } else {
-        // 页面显示时恢复输入
-        if (lastQuestionBackup.value && (!questionValue.value || questionValue.value.length < lastQuestionBackup.value.length)) {
-          questionValue.value = lastQuestionBackup.value;
-          console.log('📱 页面显示，恢复输入:', questionValue.value);
-        }
-      }
-    });
-  }
-});
-
+// 排盘函数
 function paipan() {
-  // Always use valid date/time, defaulting to current if not selected
-  const date = dateValue.value || dayjs();
-  const time = timeValue.value || dayjs();
-
-  store.setPanData(new Qimen(date.year(), date.month()+1, date.date(), time.hour() || 0).p);
-  console.log(store.panData);
+  const now = dayjs()
+  store.setPanData(new Qimen(now.year(), now.month() + 1, now.date(), now.hour()).p)
 }
 
-// 🔧 移动端输入保护：处理输入框焦点事件
-function handleInputFocus() {
-  console.log('📝 输入框获得焦点');
-  // 记录当前值作为备份
-  lastQuestionBackup.value = questionValue.value || '';
-}
-
-function handleInputBlur() {
-  console.log('📝 输入框失去焦点，当前值:', questionValue.value);
-  // 更新备份
-  if (questionValue.value && questionValue.value.trim()) {
-    lastQuestionBackup.value = questionValue.value.trim();
-  }
-}
-
-// 一键智能解卦函数 - 整合排盘和AI分析
-async function startAnalysis() {
-  console.log('🎯 开始一键智能解卦流程...');
-  
-  // 🔧 修复移动端输入问题：使用多重备份机制
-  const questionSnapshot = questionValue.value?.trim() || '';
-  const lastBackup = lastQuestionBackup.value?.trim() || '';
-  const inputElement = questionInput.value || 
-                      document.querySelector('.dao-input') as HTMLInputElement;
-  
-  // 🔧 多重备份：从多个源获取问题内容
-  let inputBackup = questionSnapshot || lastBackup;
-  
-  if (inputElement && inputElement.value?.trim()) {
-    inputBackup = inputElement.value.trim();
+// 移动端输入法优化的分析函数
+async function analyze() {
+  // 1. 强制输入框失去焦点，确保输入法完成输入
+  if (questionInput.value) {
+    questionInput.value.blur()
   }
   
-  // 最终检查：确保有问题内容
-  if (!inputBackup || inputBackup.length === 0) {
-    alert('请先输入占卜问题');
-    return;
+  // 2. 等待输入法完成（特别是中文输入法）
+  if (isComposing.value) {
+    console.log('输入法正在组合中，等待完成...')
+    await new Promise(resolve => setTimeout(resolve, 300))
+  }
+  
+  // 3. 等待Vue响应式更新
+  await new Promise(resolve => setTimeout(resolve, 100))
+  
+  // 4. 多重验证获取问题内容
+  let questionText = question.value?.trim() || ''
+  
+  // 如果Vue的值为空，直接从DOM获取
+  if (!questionText && questionInput.value) {
+    questionText = questionInput.value.value?.trim() || ''
+    // 同步到Vue
+    question.value = questionText
+  }
+  
+  console.log('问题内容验证:', {
+    'question.value': question.value,
+    'DOM value': questionInput.value?.value,
+    'isComposing': isComposing.value,
+    'final text': questionText
+  })
+  
+  if (!questionText) {
+    alert('请输入占卜问题\n\n调试信息：\n' + 
+          `Vue值: "${question.value}"\n` + 
+          `DOM值: "${questionInput.value?.value || ''}"\n` +
+          `组合状态: ${isComposing.value}`)
+    return
   }
 
-  console.log('🔧 问题内容多重检查:');
-  console.log('- questionValue.value:', questionValue.value);
-  console.log('- lastQuestionBackup.value:', lastQuestionBackup.value);
-  console.log('- inputElement.value:', inputElement?.value);
-  console.log('- 最终使用:', inputBackup);
+  loading.value = true
+  result.value = '正在分析中...'
 
-  isAnalyzing.value = true;
-  analysisResult.value = null;
-
-  // 第一步：如果没有排盘数据，先排盘
-  if (!panData.value) {
-    console.log('📊 正在自动排盘...');
-    await paipan();
-  }
-
-  // 第二步：调用AI流式分析
   try {
+    // 先排盘
+    if (!panData.value) {
+      paipan()
+    }
+    
+    // 调用真正的StreamAnalysis组件
+    console.log('🚀 启动流式AI分析...')
+    
     if (streamAnalysis.value && streamAnalysis.value.startStreamAnalysis) {
-      console.log('🚀 启动AI流式分析...');
-      await streamAnalysis.value.startStreamAnalysis();
+      await streamAnalysis.value.startStreamAnalysis()
+      console.log('✅ 流式分析已启动')
     } else {
-      console.error('❌ StreamAnalysis组件或方法未找到');
-      console.log('- streamAnalysis.value:', streamAnalysis.value);
-      if (streamAnalysis.value) {
-        console.log('- 可用方法:', Object.keys(streamAnalysis.value));
-      }
-      alert('流式分析组件未正确加载，请刷新页面重试');
+      console.error('❌ StreamAnalysis组件未找到或方法不存在')
+      throw new Error('流式分析组件加载失败')
     }
+    
   } catch (error) {
-    console.error('❌ 启动AI流式分析失败:', error);
-    alert('AI分析启动失败: ' + error.message);
-  }
-
-  isAnalyzing.value = false;
-}
-
-// 传统AI分析函数 - 保留作为备用
-async function aiAnalysis() {
-  console.log('🎯 开始AI分析流程...');
-  
-  // 🔧 修复移动端输入问题：使用多重备份机制
-  const questionSnapshot = questionValue.value?.trim() || '';
-  const lastBackup = lastQuestionBackup.value?.trim() || '';
-  const inputElement = questionInput.value || 
-                      document.querySelector('.dao-input') as HTMLInputElement;
-  
-  // 🔧 多重备份：从多个源获取问题内容
-  let inputBackup = questionSnapshot || lastBackup;
-  
-  if (inputElement && inputElement.value?.trim()) {
-    inputBackup = inputElement.value.trim();
-  }
-  
-  // 最终检查：确保有问题内容
-  if (!inputBackup || inputBackup.length === 0) {
-    alert('请先输入占卜问题');
-    return;
-  }
-
-  if (!panData.value) {
-    alert('请先进行排盘');
-    return;
-  }
-
-  console.log('🔧 问题内容多重检查:');
-  console.log('- questionValue.value:', questionValue.value);
-  console.log('- lastQuestionBackup.value:', lastQuestionBackup.value);
-  console.log('- inputElement.value:', inputElement?.value);
-  console.log('- 最终使用:', inputBackup);
-
-  isAnalyzing.value = true;
-  analysisResult.value = null;
-
-  try {
-    // 记录环境信息
-    console.log('📱 当前环境信息:');
-    console.log('- 协议:', window.location.protocol);
-    console.log('- 主机:', window.location.host);
-    console.log('- User Agent:', navigator.userAgent);
-    console.log('- 是否移动端:', /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-    console.log('- 问题备份:', inputBackup);
-    
-    // 将前端排盘数据转换为JSON格式传给后端
-    const paipanJson = JSON.parse(JSON.stringify(panData.value));
-    
-    console.log('📊 发送排盘数据到后端:', paipanJson);
-    
-    // 🔧 使用备份的问题内容，确保完整性
-    const requestData = {
-      question: inputBackup,
-      paipanData: paipanJson
-    };
-    
-    // 🔧 在请求前再次确认问题内容完整性
-    if (!requestData.question || requestData.question.length === 0) {
-      throw new Error('问题内容为空，请重新输入');
-    }
-    
-    console.log('📦 发送的完整请求数据:', JSON.stringify(requestData, null, 2));
-    console.log('🌐 API端点:', API_ENDPOINTS.QIMEN_ANALYSIS);
-    
-    // 🔧 移动端多服务器尝试策略
-    console.log('📡 使用移动端多服务器尝试策略');
-    console.log('⏰ 预计等待时间: 2-3分钟 (AI分析中...)');
-    
-    // 导入移动端HTTP工具
-    const { default: MobileHttp } = await import('../utils/mobile-http.js');
-    
-    // 🔧 获取所有可能的API端点
-    const allEndpoints = API_ENDPOINTS.getAllAnalysisEndpoints();
-    console.log('🔗 尝试的服务器端点:', allEndpoints);
-    
-    let response = null;
-    let lastError = null;
-    
-    // 🔧 尝试所有可用的服务器端点
-    for (let i = 0; i < allEndpoints.length; i++) {
-      const endpoint = allEndpoints[i];
-      console.log(`🔄 尝试服务器 ${i + 1}/${allEndpoints.length}: ${endpoint}`);
-      
-      try {
-        response = await MobileHttp.post(endpoint, requestData);
-        console.log(`✅ 服务器 ${i + 1} 连接成功!`);
-        break; // 成功了就跳出循环
-      } catch (error) {
-        console.log(`❌ 服务器 ${i + 1} 失败:`, error.message);
-        lastError = error;
-        
-        // 如果不是最后一个服务器，等待一下再尝试下一个
-        if (i < allEndpoints.length - 1) {
-          console.log(`⏳ 等待2秒后尝试下一个服务器...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      }
-    }
-    
-    // 🔧 检查是否有成功的响应
-    if (!response) {
-      throw new Error(`所有服务器都无法连接: ${lastError?.message || '未知错误'}`);
-    }
-    
-    const data = response.data;
-
-    console.log('📄 最终数据:', data);
-
-    if (data && data.success) {
-      analysisResult.value = data.analysis;
-      analysisResult.value.steps = data.steps;
-      
-      // 🔧 确保显示的问题内容正确
-      if (analysisResult.value && inputBackup !== questionValue.value) {
-        console.log('🔧 修复问题显示内容不一致');
-        questionValue.value = inputBackup;
-      }
-      
-      console.log('🎉 AI分析成功完成!');
-    } else {
-      throw new Error(data?.message || 'AI分析失败');
-    }
-
-  } catch (error) {
-    console.error('💥 AI分析错误详细信息:');
-    console.error('- 错误类型:', error.constructor.name);
-    console.error('- 错误消息:', error.message);
-    console.error('- 错误代码:', error.code);
-    console.error('- 完整错误:', error);
-    
-    // 🔧 确保错误发生时问题内容不会丢失
-    if (inputBackup && inputBackup !== questionValue.value) {
-      questionValue.value = inputBackup;
-    }
-    
-    if (error.response) {
-      console.error('📡 响应错误:');
-      console.error('- 状态码:', error.response.status);
-      console.error('- 状态文本:', error.response.statusText);
-      console.error('- 响应头:', error.response.headers);
-      console.error('- 响应数据:', error.response.data);
-    } else if (error.request) {
-      console.error('📨 请求错误:');
-      console.error('- 请求对象:', error.request);
-      console.error('- 请求配置:', error.config);
-    } else {
-      console.error('⚙️ 配置错误:', error.message);
-    }
-    
-    let errorMessage = 'AI分析失败';
-    
-    if (error.response) {
-      // 服务器响应了错误状态码
-      errorMessage = `服务器错误: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`;
-    } else if (error.request) {
-      // 请求发出了但没有收到响应
-      errorMessage = `网络连接失败: ${error.message || '请检查网络或服务器状态'}`;
-    } else {
-      // 其他错误
-      errorMessage = `请求配置错误: ${error.message}`;
-    }
-    
-    alert(`AI分析失败: ${errorMessage}`);
+    console.error('💥 启动流式分析失败:', error)
+    result.value = `启动分析失败: ${error.message}\n\n请刷新页面重试。`
   } finally {
-    isAnalyzing.value = false;
-    console.log('🎉 AI分析流程结束');
+    loading.value = false
   }
 }
 
 // 处理流式分析完成事件
-function handleStreamAnalysisComplete(result) {
-  console.log('🎉 流式分析完成:', result);
+function handleStreamAnalysisComplete(analysisResult) {
+  console.log('🎉 流式分析完成:', analysisResult)
   
-  // 可以选择将流式分析结果也保存到analysisResult中
-  // 这样用户可以看到两种分析结果
-  if (result && result.answer) {
-    // 创建一个流式分析结果对象
-    const streamResult = {
-      answer: result.answer,
-      confidence: result.confidence || 0.92,
-      executionTime: result.executionTime,
-      type: 'stream_analysis'
-    };
-    
-    // 可以选择替换现有结果或添加为新的分析结果
-    // analysisResult.value = streamResult;
-    
-    console.log('📊 流式分析统计:');
-    console.log('- 分析时长:', Math.round((result.executionTime || 0) / 1000), '秒');
-    console.log('- 内容长度:', result.answer?.length || 0, '字符');
-    console.log('- 置信度:', Math.round((result.confidence || 0.92) * 100), '%');
+  if (analysisResult && analysisResult.answer) {
+    result.value = analysisResult.answer
+    console.log('📊 分析统计:')
+    console.log('- 分析时长:', Math.round((analysisResult.executionTime || 0) / 1000), '秒')
+    console.log('- 内容长度:', analysisResult.answer?.length || 0, '字符')
+    console.log('- 置信度:', Math.round((analysisResult.confidence || 0.92) * 100), '%')
   }
 }
 
-// 添加鼠标跟随效果
-const moveOrbs = (e) => {
-  const orbs = document.querySelectorAll('.light-orb');
-  const mouseX = e.clientX;
-  const mouseY = e.clientY;
-
-  orbs.forEach((orb, index) => {
-    // 创建轻微跟随效果，每个光晕有不同的移动量
-    const moveX = (mouseX / window.innerWidth - 0.5) * (index + 1) * 20;
-    const moveY = (mouseY / window.innerHeight - 0.5) * (index + 1) * 20;
-
-    setTimeout(() => {
-      orb.style.transform = `translate(${moveX}px, ${moveY}px)`;
-    }, index * 100);
-  });
-};
-
-// 优化排盘按钮点击体验
-const isPanningActive = ref(false);
-const enhancedPaipan = () => {
-  isPanningActive.value = true;
-
-  // Vibration effect for tactile feedback
-  if (navigator.vibrate) {
-    navigator.vibrate(50);
-  }
-
-  // Ensure date and time values always exist
-  if (!dateValue.value) {
-    dateValue.value = dayjs();
-  }
-  if (!timeValue.value) {
-    timeValue.value = dayjs();
-  }
-
-  // Call the paipan function
-  paipan();
-
-  // Simulate calculation process
-  setTimeout(() => {
-    isPanningActive.value = false;
-  }, 1000);
-};
-
-// New function to show palace info with all elements in it
-function showPalaceInfo(palaceName) {
-  // 首先获取这个宫位的数据
-  const bagua = palaceName.replace('宫', '');
-  const gongData = store.getGongViewData(bagua);
-  
-  // 构建包含该宫位所有元素解释的内容
-  let fullExplanation = `<h3>${palaceName}解释</h3>\n\n`;
-  fullExplanation += infoStore.palaceMeanings[palaceName] || '未找到宫位解释';
-  fullExplanation += '\n\n<hr>\n\n<h4>宫内元素详解：</h4>\n\n';
-  
-  // 添加八神解释
-  if (gongData.八神) {
-    const divineName = {
-      '符': '值符',
-      '蛇': '螣蛇',
-      '阴': '太阴',
-      '合': '六合',
-      '虎': '白虎',
-      '武': '玄武',
-      '地': '九地',
-      '天': '九天'
-    }[gongData.八神] || gongData.八神;
-    
-    fullExplanation += `<h5>八神·${gongData.八神}</h5>\n`;
-    fullExplanation += infoStore.palaceMeanings[divineName] || '未找到八神解释';
-    fullExplanation += '\n\n';
-  }
-  
-  // 添加九星解释
-  if (gongData.九星) {
-    const starName = '天' + gongData.九星;
-    fullExplanation += `<h5>九星·${gongData.九星}</h5>\n`;
-    fullExplanation += infoStore.palaceMeanings[starName] || '未找到九星解释';
-    fullExplanation += '\n\n';
-  }
-  
-  // 添加八门解释
-  if (gongData.八门) {
-    const gateName = gongData.八门 + '门';
-    fullExplanation += `<h5>八门·${gongData.八门}</h5>\n`;
-    fullExplanation += infoStore.palaceMeanings[gateName] || '未找到八门解释';
-    fullExplanation += '\n\n';
-  }
-  
-  // 添加天干解释
-  if (gongData.天盘) {
-    fullExplanation += `<h5>天干·${gongData.天盘}</h5>\n`;
-    fullExplanation += infoStore.palaceMeanings[gongData.天盘] || '未找到天干解释';
-    fullExplanation += '\n\n';
-  }
-  
-  // 添加地支解释
-  if (gongData.地盘) {
-    fullExplanation += `<h5>地支·${gongData.地盘}</h5>\n`;
-    fullExplanation += infoStore.palaceMeanings[gongData.地盘] || '未找到地支解释';
-    fullExplanation += '\n\n';
-  }
-  
-  // 获取被点击的单元格并添加视觉效果
-  const clickedCell = document.querySelector(`[data-name="${palaceName}"]`);
-  if (clickedCell) {
-    // 添加视觉效果
-    const cells = document.querySelectorAll('.col');
-    cells.forEach(c => c.classList.remove('tapped'));
-    clickedCell.classList.add('tapped');
-    
-    // 移除动画效果
-    setTimeout(() => {
-      clickedCell.classList.remove('tapped');
-    }, 800);
-  }
-  
-  // 使用自定义HTML内容显示宫位及其所有元素的解释
-  infoStore.showPalaceInfo(palaceName, fullExplanation);
-}
-
-// Modified addTapEffects to use our new function
-const addTapEffects = () => {
-  // Add tap effect to button
-  const button = document.querySelector('.dao-button');
-  if (button) {
-    button.addEventListener('click', function() {
-      this.classList.add('tapped');
-      setTimeout(() => {
-        this.classList.remove('tapped');
-      }, 600);
-    });
-  }
-
-  // We don't need to add click listeners here anymore as we've added them in template
-  // with @click="showPalaceInfo"
-};
-
+// 初始化
 onMounted(() => {
-  // Register mouse movement events
-  document.addEventListener('mousemove', moveOrbs);
+  paipan()
+})
 
-  // Default loading today's chart
-  const now = dayjs();
-  dateValue.value = now;
-  timeValue.value = now;
-  paipan();
-
-  // IMPORTANT: Remove the 3D rotation effect completely
-  const qimenTable = document.querySelector('.qimen-table');
-  if (qimenTable) {
-    // Reset any transform to ensure flat appearance
-    (qimenTable as HTMLElement).style.transform = 'none';
-
-    // Remove scroll listener that was adding 3D effects
-    document.removeEventListener('scroll', () => {});
-  }
-
-  // Add tap/click effects for mobile
-  addTapEffects();
-});
+// 显示宫位信息
+function showPalaceInfo(palaceName) {
+  const bagua = palaceName.replace('宫', '')
+  const gongData = store.getGongViewData(bagua)
+  
+  let info = `${palaceName}信息：\n`
+  if (gongData.八神) info += `八神：${gongData.八神}\n`
+  if (gongData.九星) info += `九星：${gongData.九星}\n`
+  if (gongData.八门) info += `八门：${gongData.八门}\n`
+  
+  infoStore.showPalaceInfo(palaceName, info)
+}
 
 </script>
 
 <style scoped>
-/* Vibrant gold palette */
+/* 简化样式 */
 .qimen-container {
-  font-family: "FangSong", "STKaiti", "SimSun", serif;
-  color: #d4af37; /* Richer gold color */
-  background: #000000; /* Deeper black */
-  padding: 20px 15px 100px; /* 增加底部padding为底部导航留空间 */
-  border-radius: 0;
-  margin: 0;
-  position: relative;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #d4af37;
+  background: #000;
+  padding: 20px;
   min-height: 100vh;
-  box-shadow: none;
-  border: none;
-  overflow: visible;
   -webkit-tap-highlight-color: transparent;
 }
 
-.qimen-container::before {
-  content: "";
+/* 输入区域样式 */
+.input-section {
+  margin-bottom: 30px;
+}
+
+.question-input {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.question-input-field {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #111;
+  color: #d4af37;
+  font-size: 16px;
+}
+
+.question-input-field::placeholder {
+  color: #666;
+}
+
+.analyze-btn {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%);
+  color: #000;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 15px rgba(212, 175, 55, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.analyze-btn::before {
+  content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
-  background-size: cover, cover;
-  background-position: center, center;
-  opacity: 1;
-  z-index: -1;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.analyze-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.analyze-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(212, 175, 55, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.analyze-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 10px rgba(212, 175, 55, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.analyze-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  background: #666;
+  border-color: #444;
+  box-shadow: none;
+}
+
+/* 功能按钮样式 */
+.function-buttons {
+  display: flex;
+  gap: 15px;
+  margin: 15px 0;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.function-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 20px;
+  color: #d4af37;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.function-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.function-btn:hover::before {
+  left: 100%;
+}
+
+.function-btn:hover {
+  transform: translateY(-3px);
+  border-color: #d4af37;
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.08));
+  color: #f4d03f;
+}
+
+.function-btn .btn-icon {
+  font-size: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.function-btn .btn-text {
+  position: relative;
+  z-index: 1;
+}
+
+.history-btn:hover .btn-icon {
+  animation: bookFlip 0.6s ease-in-out;
+}
+
+.favorites-btn:hover .btn-icon {
+  animation: starGlow 0.6s ease-in-out;
+}
+
+@keyframes bookFlip {
+  0%, 100% { transform: rotateY(0deg); }
+  50% { transform: rotateY(180deg); }
+}
+
+@keyframes starGlow {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(15deg); }
+}
+
+/* 结果显示样式 */
+.result-display {
+  margin: 20px 0;
+  padding: 20px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.result-header h3 {
+  margin: 0 0 15px 0;
+  color: #d4af37;
+}
+
+.result-content {
+  color: #fff;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .qimen-container {
+    padding: 10px;
+  }
+  
+  .question-input {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .question-input-field {
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+  
+  .analyze-btn {
+    width: 100%;
+    padding: 15px;
+  }
 }
 
 /* Premium header styling */
 .cosmic-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 15px;
   position: relative;
-  padding: 25px 0;
+  padding: 15px 0;
   animation: fadeInUp 1s ease-out forwards;
 }
 
@@ -754,64 +542,24 @@ onMounted(() => {
   font-style: italic;
 }
 
-/* More elegant input section */
-.input-section {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  margin-bottom: 30px;
-  padding: 25px;
+/* 超紧凑输入区域 */
+.input-section-compact {
+  margin-bottom: 12px;
+  padding: 8px;
   background-color: rgba(10, 10, 10, 0.8);
   border: 1px solid #85754e;
   border-radius: 2px;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
   animation: fadeInUp 1s ease-out forwards;
   animation-delay: 0.2s;
 }
 
-.section-title {
-  font-size: 18px;
-  color: #d4af37;
-  margin-bottom: 15px;
-  letter-spacing: 3px;
-  position: relative;
-  padding-left: 15px;
-  font-weight: normal;
-}
-
-.section-title::before {
-  content: "『";
-  position: absolute;
-  left: 0;
-  color: #85754e;
-}
-
-.section-title::after {
-  content: "』";
-  margin-left: 5px;
-  color: #85754e;
-}
-
-.picker-wrapper {
+.question-input-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 25px;
+  gap: 8px;
+  align-items: center;
 }
 
-.picker-item {
-  flex: 1;
-  min-width: 150px;
-  display: flex;
-  flex-direction: column;
-}
 
-.picker-label {
-  font-size: 14px;
-  color: #a38a36;
-  margin-bottom: 8px;
-  letter-spacing: 1px;
-}
 
 .dao-picker {
   border: 1px solid #85754e !important;
@@ -912,8 +660,8 @@ onMounted(() => {
 
 /* Elegant results section */
 .result-section {
-  margin: 35px 0;
-  padding: 25px;
+  margin: 15px 0;
+  padding: 15px;
   background-color: rgba(8, 8, 8, 0.9);
   border: 1px solid #85754e;
   position: relative;
@@ -921,41 +669,55 @@ onMounted(() => {
 }
 
 .question-display {
-  margin-bottom: 20px;
-  padding: 15px;
-  border: 1px solid rgba(133, 117, 78, 0.3);
-  background-color: rgba(10, 10, 10, 0.5);
-}
-
-.data-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 15px;
-}
-
-.data-item {
+  margin-bottom: 12px;
   padding: 12px;
   border: 1px solid rgba(133, 117, 78, 0.3);
   background-color: rgba(10, 10, 10, 0.5);
+  border-radius: 2px;
+}
+
+/* 紧凑的数据展示布局 */
+.data-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.data-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 8px 12px;
+  border: 1px solid rgba(133, 117, 78, 0.3);
+  background-color: rgba(10, 10, 10, 0.5);
+  border-radius: 2px;
   transition: all 0.3s ease;
 }
 
-.data-item:hover {
+.data-row:hover {
   border-color: #d4af37;
   background-color: rgba(15, 15, 15, 0.7);
 }
 
+.data-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: fit-content;
+}
+
 .data-label {
   color: #85754e;
-  flex: 0 0 80px;
   font-weight: bold;
   letter-spacing: 1px;
+  font-size: 14px;
 }
 
 .data-value {
-  flex: 1;
   color: #d4af37;
   letter-spacing: 1px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .question-title {
@@ -974,7 +736,8 @@ onMounted(() => {
 /* Flat Qimen Dunjia chart (no 3D) with premium border */
 .bagua-wrapper {
   position: relative;
-  margin: 40px auto;
+  margin: 20px auto;
+  width: 100%;
   animation: fadeInUp 1s ease-out forwards;
   animation-delay: 0.6s;
   background: rgba(0,0,0,0.5);
@@ -1026,9 +789,9 @@ onMounted(() => {
 
 /* Refined table with premium styling */
 .qimen-table {
-  padding: 10px;
+  padding: 8px;
   border-collapse: separate;
-  border-spacing: 3px; /* Add subtle spacing between cells */
+  border-spacing: 2px; /* Add subtle spacing between cells */
   width: 100%;
   position: relative;
   z-index: 1;
@@ -1038,17 +801,18 @@ onMounted(() => {
   overflow: hidden;
   transition: all 0.2s ease;
   transform: none !important;
+  aspect-ratio: 1; /* 保持正方形比例 */
 }
 
 /* Elegant cells */
 .col {
   width: 33.33%;
-  height: 120px;
+  height: 100px;
   border: 1px solid #85754e !important; /* Softer gold border */
   position: relative;
   background-color: rgba(10, 10, 10, 0.9);
   vertical-align: top;
-  padding: 25px 8px 8px 8px;
+  padding: 20px 6px 6px 6px;
   transition: all 0.2s ease-out;
   transform: none !important;
   -webkit-tap-highlight-color: transparent;
@@ -1191,45 +955,27 @@ onMounted(() => {
   -webkit-tap-highlight-color: transparent;
 }
 
-.dao-input {
+.dao-input-compact {
   border: 1px solid #85754e !important;
   border-radius: 2px;
   background-color: rgba(10, 10, 10, 0.9) !important;
   color: #d4af37 !important;
-  padding: 12px 15px;
-  width: 100%;
+  padding: 8px 12px;
+  flex: 1;
   font-family: "FangSong", "STKaiti", serif;
+  font-size: 14px;
+  height: 36px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.question-wrapper {
-  width: 100%;
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
+.dao-input-compact:focus {
+  border-color: #fcdd6d !important;
+  box-shadow: 0 0 8px rgba(243, 215, 126, 0.3);
+  outline: none;
 }
 
-.input-hint {
-  font-size: 12px;
-  color: #85754e;
-  margin-top: 5px;
-  font-style: italic;
-}
 
-/* 添加响应式布局支持 */
-@media (max-width: 768px) {
-  .picker-item {
-    min-width: 100%;
-  }
 
-  .data-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .bagua-wrapper {
-    max-width: 320px;
-  }
-}
 
 /* 添加光晕效果 */
 .light-orb {
@@ -1361,84 +1107,63 @@ onMounted(() => {
   opacity: 0.7;
 }
 
-/* AI分析结果区域样式 */
+/* AI分析结果区域样式 - 紧凑版 */
 .ai-result-section {
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%);
-  border: 2px solid rgba(212, 175, 55, 0.4);
-  border-radius: 20px;
-  padding: 2rem;
-  margin: 2rem 1rem;
-  box-shadow: 
-    0 0 30px rgba(212, 175, 55, 0.3),
-    inset 0 0 20px rgba(212, 175, 55, 0.1);
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
   position: relative;
-  overflow: hidden;
-  animation: fadeInUp 0.8s ease-out;
-}
-
-.ai-result-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
-  pointer-events: none;
+  animation: fadeInUp 0.5s ease-out;
 }
 
 .ai-header {
   text-align: center;
-  margin-bottom: 2rem;
-  position: relative;
-  z-index: 2;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .ai-title {
-  font-size: 1.8rem;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   color: #d4af37;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
-  margin-bottom: 0.5rem;
-  letter-spacing: 2px;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
 }
 
 .ai-subtitle {
-  font-size: 1rem;
-  color: rgba(212, 175, 55, 0.8);
-  font-weight: 400;
-  letter-spacing: 1px;
-}
-
-.analysis-content {
-  position: relative;
-  z-index: 2;
+  font-size: 12px;
+  color: rgba(212, 175, 55, 0.7);
+  letter-spacing: 0.5px;
 }
 
 .analysis-answer {
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
 .answer-title {
-  font-size: 1.2rem;
+  font-size: 14px;
   font-weight: 600;
   color: #d4af37;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
-  letter-spacing: 1px;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 
 .answer-text {
-  font-size: 1rem;
-  line-height: 1.8;
+  font-size: 13px;
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.9);
-  text-align: justify;
   font-family: "FangSong", "STKaiti", serif;
   white-space: pre-line;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .analysis-meta {
@@ -1543,48 +1268,40 @@ onMounted(() => {
   font-family: "FangSong", "STKaiti", serif;
 }
 
-/* 主要分析按钮样式 */
-.dao-button.main-analysis-button {
+/* 紧凑按钮样式 */
+.dao-button-compact {
   background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 100%);
-  box-shadow: 0 8px 32px rgba(255, 154, 86, 0.4);
-  font-size: 18px;
-  padding: 16px 32px;
+  color: #000;
+  border: none;
+  border-radius: 2px;
+  padding: 8px 16px;
+  font-size: 14px;
   font-weight: 600;
-  min-width: 200px;
-  position: relative;
-  overflow: hidden;
+  font-family: "FangSong", "STKaiti", serif;
+  height: 36px;
+  min-width: 80px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 154, 86, 0.3);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.dao-button.main-analysis-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.dao-button.main-analysis-button:hover::before {
-  left: 100%;
-}
-
-.dao-button.main-analysis-button:hover {
+.dao-button-compact:hover {
   background: linear-gradient(135deg, #ff8844 0%, #ff5959 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(255, 154, 86, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 154, 86, 0.4);
 }
 
-.dao-button.main-analysis-button:disabled {
-  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
-  box-shadow: none;
+.dao-button-compact:active {
+  transform: scale(0.98);
+}
+
+.dao-button-compact:disabled {
+  background: linear-gradient(135deg, #666 0%, #555 100%);
   cursor: not-allowed;
   transform: none;
-}
-
-.dao-button.main-analysis-button:disabled::before {
-  display: none;
+  box-shadow: none;
+  opacity: 0.7;
 }
 
 </style>

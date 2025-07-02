@@ -10,7 +10,7 @@ SERVER_USER="root"  # 根据实际情况修改用户名
 REMOTE_PATH="/home/qimen-backend"
 LOCAL_BACKEND_PATH="./backend"
 
-echo "🔮 开始部署云雀奇门遁甲认证系统到 ${SERVER_IP}..."
+echo "🔮 开始部署鬼谷奇门遁甲认证系统到 ${SERVER_IP}..."
 
 # 1. 准备部署包
 echo "📦 准备部署包..."
@@ -70,7 +70,7 @@ ssh ${SERVER_USER}@${SERVER_IP} << 'EOF'
     if [ ! -f "start-production.sh" ]; then
         cat > start-production.sh << 'SCRIPT_EOF'
 #!/bin/bash
-echo "🚀 启动云雀奇门遁甲认证服务器..."
+echo "🚀 启动鬼谷奇门遁甲认证服务器..."
 nohup node server.js > server.log 2>&1 &
 echo "✅ 服务器已在后台启动"
 echo "📝 日志文件: server.log"

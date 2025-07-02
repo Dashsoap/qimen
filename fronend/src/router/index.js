@@ -4,6 +4,8 @@ import HomeView from '../views/HomeView.vue'
 import QimenView from '../views/QimenView.vue'
 import LoginView from '../views/LoginView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import HistoryView from '../views/HistoryView.vue'
+import FavoritesView from '../views/FavoritesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,6 +49,18 @@ const router = createRouter({
       component: ProfileView,
       // 注意：这个页面不需要强制登录，用户可以查看登录状态
       meta: { requiresAuth: false }
+    },
+    {
+      path: '/history',
+      name: 'history',
+      component: HistoryView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/favorites',
+      name: 'favorites',
+      component: FavoritesView,
+      meta: { requiresAuth: true }
     }
   ]
 })

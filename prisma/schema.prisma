@@ -22,6 +22,9 @@ model User {
   subscription Subscription?
   points      UserPoints?
   
+  qimenRecords QimenRecord[]
+  qimenFavorites QimenFavorite[]
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -88,4 +91,38 @@ model PointsRecord {
   userPoints   UserPoints @relation(fields: [userPointsId], references: [id], onDelete: Cascade)
   
   createdAt    DateTime @default(now())
+}
+
+// 奇门遁甲历史记录
+model QimenRecord {
+  id          String   @id @default(uuid())
+  userId      String
+  question    String   // 用户提问
+  paipanData  String   // 排盘数据 (JSON字符串)
+  analysis    String   // AI分析结果
+  tags        String?  // 标签，用逗号分隔
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites   QimenFavorite[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, createdAt])
+}
+
+// 收藏夹
+model QimenFavorite {
+  id          String   @id @default(uuid())
+  userId      String
+  recordId    String
+  note        String?  // 收藏备注
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  record      QimenRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([userId, recordId])
+  @@index([userId, createdAt])
 } 

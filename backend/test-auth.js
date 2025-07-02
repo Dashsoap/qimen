@@ -9,7 +9,7 @@ const BASE_URL = 'http://localhost:3001';
 // npm install axios
 
 async function testAuthSystem() {
-  console.log('🔮 开始测试云雀奇门遁甲认证系统\n');
+  console.log('🔮 开始测试鬼谷奇门遁甲认证系统\n');
   
   let authToken = '';
   

@@ -173,7 +173,7 @@ const authenticateToken = async (req, res, next) => {
 // 根路径
 app.get('/', (req, res) => {
   res.json({
-    message: '🔮 云雀奇门遁甲 - 完整版后端服务',
+    message: '🔮 鬼谷奇门遁甲 - 完整版后端服务',
     version: '2.0.0',
     status: 'running',
     features: [
@@ -795,14 +795,30 @@ app.post('/api/analysis/qimen/stream', authenticateToken, async (req, res) => {
     })}\n\n`);
 
     // 调用流式AI分析
-    await callDeepSeekAPIStream(question, parsedPaipan, res, sessionId);
+    const analysisResult = await callDeepSeekAPIStream(question, parsedPaipan, res, sessionId);
+    
+    // 保存到历史记录
+    try {
+      await prisma.qimenRecord.create({
+        data: {
+          userId: req.user.id,
+          question: question,
+          paipanData: JSON.stringify(paipanData),
+          analysis: analysisResult.analysis || '分析完成',
+          tags: null
+        }
+      });
+      console.log('✅ 历史记录已保存');
+    } catch (error) {
+      console.error('保存历史记录失败:', error);
+    }
     
     // 发送完成消息
     res.write(`data: ${JSON.stringify({
       type: 'complete',
       sessionId: sessionId,
       timestamp: new Date().toISOString(),
-      message: '✅ 奇门遁甲分析完成'
+      message: '✅ 奇门遁甲分析完成，已保存到历史记录'
     })}\n\n`);
     
     res.end();
@@ -892,6 +908,7 @@ async function callDeepSeekAPI(question, parsedPaipan) {
 // 调用豆包DeepSeek API进行流式AI分析
 async function callDeepSeekAPIStream(question, parsedPaipan, res, sessionId) {
   const startTime = Date.now();
+  let analysisResult = { analysis: '', executionTime: 0 };
   
   try {
     // 构建专业的奇门遁甲分析提示词
@@ -993,6 +1010,10 @@ ${question}
     })}\n\n`);
 
     console.log(`✅ 流式AI分析完成，用时: ${executionTime}ms`);
+    
+    // 设置返回结果
+    analysisResult.analysis = cleanedContent;
+    analysisResult.executionTime = executionTime;
 
   } catch (error) {
     console.error('DeepSeek流式API调用错误:', error);
@@ -1013,7 +1034,13 @@ ${question}
         model: 'Fallback'
       }
     })}\n\n`);
+    
+    // 设置备用返回结果
+    analysisResult.analysis = fallbackAnalysis;
+    analysisResult.executionTime = executionTime;
   }
+  
+  return analysisResult;
 }
 
 // 清理AI回答，移除免责声明
@@ -1081,6 +1108,354 @@ function generateFallbackAnalysis(question, parsedPaipan, executionTime) {
 *分析完成时间：${Math.round(executionTime)}ms*`;
 }
 
+// === 历史记录和收藏夹API ===
+
+// 获取历史记录
+app.get('/api/qimen/history', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '' } = req.query;
+    const offset = (page - 1) * limit;
+
+    const where = {
+      userId: req.user.id,
+      ...(search && {
+        OR: [
+          { question: { contains: search } },
+          { tags: { contains: search } }
+        ]
+      })
+    };
+
+    const [records, total] = await Promise.all([
+      prisma.qimenRecord.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: parseInt(limit),
+        include: {
+          favorites: {
+            where: { userId: req.user.id }
+          }
+        }
+      }),
+      prisma.qimenRecord.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        records: records.map(record => ({
+          ...record,
+          paipanData: JSON.parse(record.paipanData),
+          isFavorited: record.favorites.length > 0
+        })),
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('获取历史记录错误:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取历史记录失败',
+      message: error.message
+    });
+  }
+});
+
+// 获取单个历史记录详情
+app.get('/api/qimen/history/:id', authenticateToken, async (req, res) => {
+  try {
+    const record = await prisma.qimenRecord.findFirst({
+      where: {
+        id: req.params.id,
+        userId: req.user.id
+      },
+      include: {
+        favorites: {
+          where: { userId: req.user.id }
+        }
+      }
+    });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: '记录不存在'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...record,
+        paipanData: JSON.parse(record.paipanData),
+        isFavorited: record.favorites.length > 0
+      }
+    });
+
+  } catch (error) {
+    console.error('获取历史记录详情错误:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取记录详情失败',
+      message: error.message
+    });
+  }
+});
+
+// 删除历史记录
+app.delete('/api/qimen/history/:id', authenticateToken, async (req, res) => {
+  try {
+    const record = await prisma.qimenRecord.findFirst({
+      where: {
+        id: req.params.id,
+        userId: req.user.id
+      }
+    });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: '记录不存在'
+      });
+    }
+
+    await prisma.qimenRecord.delete({
+      where: { id: req.params.id }
+    });
+
+    res.json({
+      success: true,
+      message: '记录已删除'
+    });
+
+  } catch (error) {
+    console.error('删除历史记录错误:', error);
+    res.status(500).json({
+      success: false,
+      error: '删除记录失败',
+      message: error.message
+    });
+  }
+});
+
+// 获取收藏夹
+app.get('/api/qimen/favorites', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const [favorites, total] = await Promise.all([
+      prisma.qimenFavorite.findMany({
+        where: { userId: req.user.id },
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: parseInt(limit),
+        include: {
+          record: true
+        }
+      }),
+      prisma.qimenFavorite.count({
+        where: { userId: req.user.id }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        favorites: favorites.map(fav => ({
+          ...fav,
+          record: {
+            ...fav.record,
+            paipanData: JSON.parse(fav.record.paipanData)
+          }
+        })),
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('获取收藏夹错误:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取收藏夹失败',
+      message: error.message
+    });
+  }
+});
+
+// 添加收藏
+app.post('/api/qimen/favorites', authenticateToken, async (req, res) => {
+  try {
+    const { recordId, note = '' } = req.body;
+
+    if (!recordId) {
+      return res.status(400).json({
+        success: false,
+        error: '记录ID不能为空'
+      });
+    }
+
+    // 检查记录是否存在并属于当前用户
+    const record = await prisma.qimenRecord.findFirst({
+      where: {
+        id: recordId,
+        userId: req.user.id
+      }
+    });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: '记录不存在'
+      });
+    }
+
+    // 检查是否已收藏
+    const existingFavorite = await prisma.qimenFavorite.findFirst({
+      where: {
+        userId: req.user.id,
+        recordId: recordId
+      }
+    });
+
+    if (existingFavorite) {
+      return res.status(400).json({
+        success: false,
+        error: '已收藏该记录'
+      });
+    }
+
+    // 创建收藏
+    const favorite = await prisma.qimenFavorite.create({
+      data: {
+        userId: req.user.id,
+        recordId: recordId,
+        note: note
+      },
+      include: {
+        record: true
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '收藏成功',
+      data: {
+        ...favorite,
+        record: {
+          ...favorite.record,
+          paipanData: JSON.parse(favorite.record.paipanData)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('添加收藏错误:', error);
+    res.status(500).json({
+      success: false,
+      error: '收藏失败',
+      message: error.message
+    });
+  }
+});
+
+// 取消收藏
+app.delete('/api/qimen/favorites/:recordId', authenticateToken, async (req, res) => {
+  try {
+    const favorite = await prisma.qimenFavorite.findFirst({
+      where: {
+        userId: req.user.id,
+        recordId: req.params.recordId
+      }
+    });
+
+    if (!favorite) {
+      return res.status(404).json({
+        success: false,
+        error: '收藏记录不存在'
+      });
+    }
+
+    await prisma.qimenFavorite.delete({
+      where: { id: favorite.id }
+    });
+
+    res.json({
+      success: true,
+      message: '已取消收藏'
+    });
+
+  } catch (error) {
+    console.error('取消收藏错误:', error);
+    res.status(500).json({
+      success: false,
+      error: '取消收藏失败',
+      message: error.message
+    });
+  }
+});
+
+// 更新收藏备注
+app.put('/api/qimen/favorites/:recordId', authenticateToken, async (req, res) => {
+  try {
+    const { note } = req.body;
+
+    const favorite = await prisma.qimenFavorite.findFirst({
+      where: {
+        userId: req.user.id,
+        recordId: req.params.recordId
+      }
+    });
+
+    if (!favorite) {
+      return res.status(404).json({
+        success: false,
+        error: '收藏记录不存在'
+      });
+    }
+
+    const updatedFavorite = await prisma.qimenFavorite.update({
+      where: { id: favorite.id },
+      data: { note: note || '' },
+      include: {
+        record: true
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '备注更新成功',
+      data: {
+        ...updatedFavorite,
+        record: {
+          ...updatedFavorite.record,
+          paipanData: JSON.parse(updatedFavorite.record.paipanData)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('更新收藏备注错误:', error);
+    res.status(500).json({
+      success: false,
+      error: '更新备注失败',
+      message: error.message
+    });
+  }
+});
+
 // 错误处理中间件
 app.use((error, req, res, next) => {
   console.error('服务器错误:', error);
@@ -1117,7 +1492,7 @@ process.on('SIGINT', async () => {
 app.listen(PORT, () => {
   console.log(`
 🔮 =======================================
-   云雀奇门遁甲 - 完整版后端服务
+   鬼谷奇门遁甲 - 完整版后端服务
 🔮 =======================================
 
 ✅ 服务器启动成功

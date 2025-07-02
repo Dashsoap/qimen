@@ -143,7 +143,7 @@ async function startStreamAnalysis() {
   
   // 如果仍然为空，尝试从DOM元素获取
   if (!questionText) {
-    const inputElement = document.querySelector('.dao-input') as HTMLInputElement;
+    const inputElement = document.querySelector('.question-input-field') as HTMLInputElement;
     if (inputElement && inputElement.value) {
       questionText = inputElement.value.trim();
       console.log('🔧 从DOM元素获取问题:', questionText);

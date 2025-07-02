@@ -206,7 +206,7 @@ const authenticateToken = async (req, res, next) => {
 // 根路径
 app.get('/', (req, res) => {
   res.json({
-    message: '🔮 云雀奇门遁甲 - 完整版后端服务',
+    message: '🔮 鬼谷奇门遁甲 - 完整版后端服务',
     version: '2.0.0',
     status: 'running',
     features: [
@@ -825,7 +825,7 @@ process.on('SIGINT', async () => {
 app.listen(PORT, () => {
   console.log(`
 🔮 =======================================
-   云雀奇门遁甲 - 完整版后端服务
+   鬼谷奇门遁甲 - 完整版后端服务
 🔮 =======================================
 
 ✅ 服务器启动成功
