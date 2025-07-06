@@ -9,6 +9,9 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import Joi from 'joi';
 import OpenAI from 'openai';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import dotenv from 'dotenv';
 
 // 导入服务
 import { initDatabase } from './src/database/init.js';

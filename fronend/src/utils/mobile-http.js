@@ -131,6 +131,11 @@ export class MobileHttp {
     
     clearTimeout(timeoutId);
     
+    // 🔧 修复：检查response是否存在
+    if (!response) {
+      throw new Error('网络连接失败，请检查网络状态');
+    }
+    
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -226,6 +231,11 @@ export class MobileHttp {
     const response = await fetch(url, fetchOptions);
     
     clearTimeout(timeoutId);
+    
+    // 🔧 修复：检查response是否存在
+    if (!response) {
+      throw new Error('网络连接失败，请检查网络状态');
+    }
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
