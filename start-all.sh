@@ -22,7 +22,7 @@ fi
 echo ""
 echo "🚀 启动后端AI服务..."
 cd ../backend
-node simple-server.js &
+node server.js &
 BACKEND_PID=$!
 
 # 等待后端启动

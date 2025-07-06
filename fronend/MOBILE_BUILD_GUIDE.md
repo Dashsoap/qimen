@@ -1,4 +1,4 @@
-# 🚀 云雀奇门移动APP构建指南
+# 🚀 鬼谷奇门移动APP构建指南
 
 ## 📋 目录
 - [环境准备](#环境准备)
@@ -108,7 +108,7 @@ cd android
 ### 签名APK (生产环境)
 1. **生成密钥库**
    ```bash
-   keytool -genkey -v -keystore yunque-qimen-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias yunque-qimen
+   keytool -genkey -v -keystore guigu-qimen-key.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias guigu-qimen
    ```
 
 2. **配置签名** (在 `android/app/build.gradle` 中)
@@ -116,9 +116,9 @@ cd android
    android {
        signingConfigs {
            release {
-               keyAlias 'yunque-qimen'
+               keyAlias 'guigu-qimen'
                keyPassword 'your-password'
-               storeFile file('../yunque-qimen-key.keystore')
+               storeFile file('../guigu-qimen-key.keystore')
                storePassword 'your-password'
            }
        }

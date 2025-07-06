@@ -2,72 +2,102 @@
   <div class="stream-analysis-container">
     <!-- 隐藏按钮，由父组件调用 -->
 
-    <!-- 流式分析结果区域 -->
+    <!-- 简化版分析结果区域 -->
     <div class="stream-result-section" v-if="showStreamResult">
-      <div class="stream-header">
-        <div class="stream-title">🔮 AI流式分析 - 实时解读</div>
-        <div class="stream-subtitle">基于奇门遁甲排盘数据 · 实时生成</div>
-        <div class="stream-close" @click="closeStreamResult">×</div>
+      <div class="simple-header">
+        <div class="simple-title">
+          🔮 奇门解读
+          <span v-if="conversationHistory.length > 0" class="conversation-indicator">
+            (第{{ conversationHistory.length + 1 }}轮对话)
+          </span>
+        </div>
+        <div class="header-actions">
+          <button 
+            v-if="conversationHistory.length > 0" 
+            @click="resetAllState"
+            class="new-conversation-btn"
+            title="开始新对话"
+          >
+            🆕
+          </button>
+          <div class="simple-close" @click="closeStreamResult">×</div>
+        </div>
+      </div>
+      
+      <!-- 对话历史显示（可折叠） -->
+      <div class="conversation-history" v-if="conversationHistory.length > 0">
+        <div class="history-header" @click="showHistory = !showHistory">
+          <span class="history-icon">📚</span>
+          <span class="history-title">查看历史对话 ({{ conversationHistory.length }}轮)</span>
+          <span class="toggle-icon">{{ showHistory ? '▼' : '▶' }}</span>
+        </div>
+        <div class="history-content" v-if="showHistory">
+          <div 
+            v-for="(item, index) in conversationHistory" 
+            :key="index"
+            class="history-item"
+          >
+            <div class="history-question">
+              <span class="history-label">问{{ index + 1 }}：</span>
+              <span class="history-text">{{ item.question }}</span>
+            </div>
+            <div class="history-answer">
+              <span class="history-label">解{{ index + 1 }}：</span>
+              <span class="history-text">{{ item.answer.substring(0, 150) }}{{ item.answer.length > 150 ? '...' : '' }}</span>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- 问题显示 -->
       <div class="question-display" v-if="currentQuestion">
-        <div class="question-title">问题：</div>
+        <div class="question-title">问</div>
         <div class="question-content">{{ currentQuestion }}</div>
       </div>
 
-      <!-- 状态步骤显示 -->
-      <div class="stream-steps" v-if="streamSteps.length > 0">
-        <div 
-          v-for="(step, index) in streamSteps" 
-          :key="index"
-          class="stream-step"
-          :class="{ 'active': index === streamSteps.length - 1 }"
-        >
-          <div class="step-icon">{{ step.icon }}</div>
-          <div class="step-text">{{ step.message }}</div>
-          <div class="step-time">{{ formatTime(step.timestamp) }}</div>
-        </div>
+      <!-- 加载状态 -->
+      <div class="loading-state" v-if="isStreaming && !streamContent">
+        <div class="loading-icon">🔮</div>
+        <div class="loading-text">正在推演...</div>
       </div>
 
       <!-- 实时内容显示 -->
-      <div class="stream-content" v-if="streamContent">
-        <div class="content-header">
-          <div class="content-title">💫 AI大师解读</div>
-          <div class="content-progress" v-if="isStreaming">
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
-            </div>
-            <div class="progress-text">正在生成中... {{ Math.round(progressPercent) }}%</div>
-          </div>
+      <div class="answer-content" v-if="streamContent">
+        <div class="answer-header">
+          <div class="answer-title">解</div>
         </div>
         
-        <div class="content-text">
+        <div class="answer-text">
           <div class="typing-text" :class="{ 'typing': isStreaming }">
             {{ streamContent }}
           </div>
           <div class="cursor" v-if="isStreaming">|</div>
         </div>
-      </div>
-
-      <!-- 完成状态 -->
-      <div class="stream-complete" v-if="analysisComplete">
-        <div class="complete-header">
-          <div class="complete-icon">✅</div>
-          <div class="complete-text">分析完成</div>
-        </div>
-        <div class="complete-stats">
-          <div class="stat-item">
-            <div class="stat-label">用时</div>
-            <div class="stat-value">{{ Math.round(analysisTime / 1000) }}秒</div>
+        
+        <!-- 追问功能 -->
+        <div class="follow-up-section" v-if="analysisComplete">
+          <div class="follow-up-header">
+            <span class="follow-up-icon">💭</span>
+            <span class="follow-up-title">继续问卜</span>
           </div>
-          <div class="stat-item">
-            <div class="stat-label">字数</div>
-            <div class="stat-value">{{ streamContent?.length || 0 }}</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-label">置信度</div>
-            <div class="stat-value">{{ Math.round(confidence * 100) }}%</div>
+          <div class="follow-up-input">
+            <textarea 
+              v-model="followUpQuestion"
+              placeholder="基于上述解读，您还想了解什么？&#10;例如：具体应该在什么时候行动？"
+              class="follow-up-textarea"
+              rows="2"
+              maxlength="100"
+            ></textarea>
+            <div class="follow-up-actions">
+              <span class="char-count">{{ followUpQuestion.length }}/100</span>
+              <button 
+                @click="askFollowUp"
+                :disabled="!followUpQuestion.trim() || isStreaming"
+                class="follow-up-btn"
+              >
+                继续问卜
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -75,13 +105,22 @@
       <!-- 错误显示 -->
       <div class="stream-error" v-if="streamError">
         <div class="error-header">
-          <div class="error-icon">❌</div>
-          <div class="error-text">分析出错</div>
+          <div class="error-icon">⚠️</div>
+          <div class="error-text">推演受阻</div>
         </div>
         <div class="error-message">{{ streamError }}</div>
-        <button class="dao-button retry-button" @click="retryAnalysis()">
-          <span class="dao-button-text">🔄 重试</span>
-        </button>
+        <div class="error-actions">
+          <button class="retry-button" @click="retryAnalysis()">
+            <span>🔄 重新推演</span>
+          </button>
+          <router-link 
+            v-if="streamError.includes('积分')" 
+            to="/profile" 
+            class="profile-link-btn"
+          >
+            <span>👤 个人中心</span>
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -111,6 +150,11 @@ const streamError = ref('');
 const analysisComplete = ref(false);
 const analysisTime = ref(0);
 const confidence = ref(0.92);
+const followUpQuestion = ref('');
+
+// 对话历史记录
+const conversationHistory = ref<Array<{question: string, answer: string, timestamp: string}>>([]);
+const showHistory = ref(false);
 const progressPercent = ref(0);
 const currentQuestion = ref('');
 
@@ -231,7 +275,40 @@ async function startFetchStream(questionText: string) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // 尝试读取错误响应体
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      try {
+        const errorText = await response.text();
+        console.log('📋 错误响应原始内容:', errorText);
+        
+        if (errorText) {
+          try {
+            const errorData = JSON.parse(errorText);
+            console.log('📋 解析后的错误数据:', errorData);
+            
+            // 优先使用message字段，它通常包含更详细的信息
+            if (errorData.message) {
+              errorMessage = errorData.message;
+              console.log('✅ 使用message字段:', errorMessage);
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+              console.log('✅ 使用error字段:', errorMessage);
+            } else {
+              console.log('⚠️ 未找到message或error字段，使用原始文本');
+              errorMessage = errorText;
+            }
+          } catch (parseError) {
+            console.log('⚠️ JSON解析失败，使用原始文本:', errorText);
+            errorMessage = errorText;
+          }
+        }
+      } catch (readError) {
+        console.log('⚠️ 读取响应体失败:', readError);
+      }
+      
+      console.log('🔴 最终错误信息:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     const reader = response.body?.getReader();
@@ -368,6 +445,13 @@ function completeAnalysis() {
     progressInterval = null;
   }
 
+  // 保存到对话历史
+  conversationHistory.value.push({
+    question: currentQuestion.value,
+    answer: streamContent.value,
+    timestamp: new Date().toISOString()
+  });
+
   // 通知父组件分析完成
   emit('analysisComplete', {
     answer: streamContent.value,
@@ -377,12 +461,25 @@ function completeAnalysis() {
   });
 
   console.log('🎉 流式分析完成!');
+  console.log('💾 对话历史已保存，当前对话数:', conversationHistory.value.length);
 }
 
 // 处理错误
 function handleStreamError(message: string) {
   console.error('❌ 流式分析错误:', message);
-  streamError.value = message;
+  
+  // 优化错误信息显示
+  let displayMessage = message;
+  
+  if (message.includes('积分不足') || message.includes('积分')) {
+    displayMessage = `${message}\n\n💡 提示：您可以通过以下方式获取积分：\n• 每日签到\n• 完善个人资料\n• 分享给好友`;
+  } else if (message.includes('未登录') || message.includes('登录')) {
+    displayMessage = `${message}\n\n请先登录您的账户`;
+  } else if (message.includes('网络') || message.includes('连接')) {
+    displayMessage = `${message}\n\n请检查网络连接后重试`;
+  }
+  
+  streamError.value = displayMessage;
   isStreaming.value = false;
   
   if (progressInterval) {
@@ -413,6 +510,140 @@ function retryAnalysis() {
   startStreamAnalysis();
 }
 
+// 追问功能
+async function askFollowUp() {
+  if (!followUpQuestion.value.trim()) return;
+  
+  // 构建完整的对话历史上下文
+  let conversationContext = '';
+  
+  // 包含所有历史对话
+  conversationHistory.value.forEach((item, index) => {
+    conversationContext += `【对话${index + 1}】\n问：${item.question}\n解：${item.answer}\n\n`;
+  });
+  
+  // 如果当前还有内容（但还没保存到历史），也加上
+  if (streamContent.value && !conversationHistory.value.find(h => h.answer === streamContent.value)) {
+    conversationContext += `【当前对话】\n问：${currentQuestion.value}\n解：${streamContent.value}\n\n`;
+  }
+  
+  // 构建带完整上下文的追问
+  const contextualQuestion = `${conversationContext}【新的追问】${followUpQuestion.value.trim()}`;
+  
+  // 保存用户输入的追问内容
+  const userFollowUp = followUpQuestion.value.trim();
+  
+  // 重置状态，开始新的分析
+  resetStreamState();
+  currentQuestion.value = userFollowUp;
+  followUpQuestion.value = '';
+  
+  console.log('🔄 开始追问分析...');
+  console.log('📚 发送的完整上下文长度:', conversationContext.length, '字符');
+  console.log('❓ 新追问:', userFollowUp);
+  
+  // 开始新的分析，发送包含完整对话历史的上下文
+  await startStreamAnalysisWithContext(contextualQuestion);
+}
+
+// 带上下文的分析函数
+async function startStreamAnalysisWithContext(contextualQuestion: string) {
+  if (!props.panData) {
+    console.error('❌ 没有排盘数据');
+    streamError.value = '请先进行排盘';
+    return;
+  }
+
+  console.log('🔮 开始带上下文的流式分析...');
+  isStreaming.value = true;
+  showStreamResult.value = true;
+  streamError.value = '';
+  startTime = Date.now();
+
+  try {
+    // 获取认证token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('用户未登录，请先登录');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/analysis/qimen/stream`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        paipanData: props.panData,
+        question: contextualQuestion // 发送包含上下文的问题
+      })
+    });
+
+    if (!response.ok) {
+      // 尝试读取错误响应体
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      try {
+        const errorText = await response.text();
+        console.log('📋 追问错误响应原始内容:', errorText);
+        
+        if (errorText) {
+          try {
+            const errorData = JSON.parse(errorText);
+            console.log('📋 追问解析后的错误数据:', errorData);
+            
+            // 优先使用message字段，它通常包含更详细的信息
+            if (errorData.message) {
+              errorMessage = errorData.message;
+              console.log('✅ 追问使用message字段:', errorMessage);
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+              console.log('✅ 追问使用error字段:', errorMessage);
+            } else {
+              console.log('⚠️ 追问未找到message或error字段，使用原始文本');
+              errorMessage = errorText;
+            }
+          } catch (parseError) {
+            console.log('⚠️ 追问JSON解析失败，使用原始文本:', errorText);
+            errorMessage = errorText;
+          }
+        }
+      } catch (readError) {
+        console.log('⚠️ 追问读取响应体失败:', readError);
+      }
+      
+      console.log('🔴 追问最终错误信息:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('无法创建流读取器');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = new TextDecoder().decode(value);
+      const lines = chunk.split('\n').filter(line => line.trim());
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            handleStreamData(data);
+          } catch (e) {
+            console.warn('解析数据失败:', e);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ 流式分析失败:', error);
+    handleStreamError(`分析过程中出现错误: ${error.message}`);
+  }
+}
+
 // 关闭结果
 function closeStreamResult() {
   showStreamResult.value = false;
@@ -420,7 +651,7 @@ function closeStreamResult() {
   resetStreamState();
 }
 
-// 重置状态
+// 重置状态（保留对话历史）
 function resetStreamState() {
   streamSteps.value = [];
   streamContent.value = '';
@@ -428,6 +659,15 @@ function resetStreamState() {
   analysisComplete.value = false;
   analysisTime.value = 0;
   progressPercent.value = 0;
+  // 注意：不清除 conversationHistory，保持对话连续性
+}
+
+// 完全重置（清除对话历史）
+function resetAllState() {
+  resetStreamState();
+  conversationHistory.value = [];
+  currentQuestion.value = '';
+  console.log('🗑️ 已清除所有对话历史');
 }
 
 // 格式化时间
@@ -470,7 +710,8 @@ defineExpose({
   startStreamAnalysis,
   stopStreamAnalysis,
   testDisplay,
-  resetStreamState
+  resetStreamState,
+  resetAllState
 });
 </script>
 
@@ -536,7 +777,8 @@ defineExpose({
   pointer-events: none;
 }
 
-.stream-header {
+/* 简化版头部样式 */
+.simple-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -547,23 +789,50 @@ defineExpose({
   z-index: 2;
 }
 
-.stream-title {
-  font-size: 1.8rem;
-  font-weight: 700;
+.simple-title {
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #d4af37;
   text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
-  margin-bottom: 0.5rem;
-  letter-spacing: 2px;
-}
-
-.stream-subtitle {
-  font-size: 1rem;
-  color: rgba(212, 175, 55, 0.8);
-  font-weight: 400;
   letter-spacing: 1px;
 }
 
-.stream-close {
+.conversation-indicator {
+  font-size: 0.9rem;
+  color: rgba(212, 175, 55, 0.7);
+  font-weight: 400;
+  margin-left: 10px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-conversation-btn {
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: rgba(212, 175, 55, 0.6);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.new-conversation-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: scale(1.1);
+}
+
+.simple-close {
   cursor: pointer;
   font-size: 1.5rem;
   color: rgba(212, 175, 55, 0.6);
@@ -578,10 +847,92 @@ defineExpose({
   background: rgba(0, 0, 0, 0.3);
 }
 
-.stream-close:hover {
-  background: rgba(220, 38, 38, 0.8);
-  color: white;
-  border-color: #dc2626;
+.simple-close:hover {
+  background: rgba(212, 175, 55, 0.3);
+  color: #d4af37;
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+/* 对话历史样式 */
+.conversation-history {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: rgba(212, 175, 55, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.history-header:hover {
+  background: rgba(212, 175, 55, 0.15);
+}
+
+.history-icon {
+  font-size: 1rem;
+}
+
+.history-title {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #d4af37;
+  font-weight: 500;
+}
+
+.toggle-icon {
+  font-size: 0.8rem;
+  color: rgba(212, 175, 55, 0.7);
+  transition: transform 0.3s ease;
+}
+
+.history-content {
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.history-item:last-child {
+  margin-bottom: 0;
+}
+
+.history-question,
+.history-answer {
+  margin-bottom: 8px;
+}
+
+.history-question:last-child,
+.history-answer:last-child {
+  margin-bottom: 0;
+}
+
+.history-label {
+  font-weight: 600;
+  color: #d4af37;
+  margin-right: 8px;
+  min-width: 40px;
+  display: inline-block;
+}
+
+.history-text {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  font-size: 13px;
 }
 
 .question-display {
@@ -599,13 +950,145 @@ defineExpose({
   color: #d4af37;
   margin-bottom: 1rem;
   text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
-  letter-spacing: 1px;
+  letter-spacing: 3px;
+  font-size: 1.2rem;
 }
 
 .question-content {
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.8;
   font-family: "FangSong", "STKaiti", serif;
+}
+
+/* 加载状态样式 */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.loading-icon {
+  font-size: 2rem;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  color: #d4af37;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* 答案内容样式 */
+.answer-content {
+  margin-bottom: 25px;
+}
+
+.answer-header {
+  margin-bottom: 20px;
+}
+
+.answer-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #d4af37;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+  letter-spacing: 3px;
+  margin-bottom: 15px;
+}
+
+.answer-text {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+  padding: 20px;
+  position: relative;
+}
+
+/* 追问功能样式 */
+.follow-up-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.follow-up-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.follow-up-icon {
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5));
+}
+
+.follow-up-title {
+  font-size: 1rem;
+  color: #d4af37;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.follow-up-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.follow-up-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #d4af37;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+}
+
+.follow-up-textarea::placeholder {
+  color: rgba(212, 175, 55, 0.5);
+}
+
+.follow-up-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: rgba(212, 175, 55, 0.6);
+}
+
+.follow-up-btn {
+  background: linear-gradient(135deg, #d4af37, #b8860b);
+  color: #000;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.follow-up-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.follow-up-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .stream-steps {
@@ -780,8 +1263,8 @@ defineExpose({
 }
 
 .stream-error {
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   padding: 1.5rem;
   border-radius: 15px;
   text-align: center;
@@ -797,24 +1280,69 @@ defineExpose({
 
 .error-icon {
   font-size: 1.5rem;
-  color: #dc2626;
+  color: #d4af37;
 }
 
 .error-text {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #dc2626;
+  color: #d4af37;
+  letter-spacing: 1px;
 }
 
 .error-message {
-  color: rgba(220, 38, 38, 0.9);
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 1rem;
   line-height: 1.6;
   font-family: "FangSong", "STKaiti", serif;
+  white-space: pre-line; /* 支持换行符显示 */
+  text-align: left;
 }
 
 .retry-button {
-  background: linear-gradient(45deg, #f56565, #e53e3e);
+  background: linear-gradient(135deg, #d4af37, #b8860b);
+  color: #000;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.error-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.profile-link-btn {
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-link-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+  background: linear-gradient(135deg, #357abd, #2968a3);
 }
 
 /* 动画效果 */
@@ -837,6 +1365,27 @@ defineExpose({
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
+}
+
+@keyframes pulse {
+  0% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
 }
 
 /* 移动端适配 */
@@ -878,6 +1427,61 @@ defineExpose({
     font-size: 16px;
     margin-right: 10px;
     width: 20px;
+  }
+  
+  .follow-up-section {
+    margin-top: 20px;
+    padding-top: 15px;
+  }
+  
+  .follow-up-textarea {
+    font-size: 13px;
+  }
+  
+  .follow-up-btn {
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+  
+  .simple-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .header-actions {
+    align-self: flex-end;
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  
+  .conversation-history {
+    margin-bottom: 15px;
+  }
+  
+  .history-content {
+    max-height: 200px;
+  }
+  
+  .history-item {
+    padding: 10px;
+  }
+  
+  .history-text {
+    font-size: 12px;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .retry-button,
+  .profile-link-btn {
+    width: 100%;
+    padding: 10px 15px;
+    font-size: 14px;
   }
 }
 </style> 

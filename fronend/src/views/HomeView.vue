@@ -15,10 +15,85 @@ import mobileOptimizer from '../utils/mobile-optimization.js';
 import emergencyOptimizer from '../utils/emergency-optimization.js';
 import debugHelper from '../utils/debug-helper.js';
 import PerformanceMonitor from '../components/PerformanceMonitor.vue';
+import { useRouter } from 'vue-router';
 
 // Canvas
 const canvas = ref();
 const typingText = ref();
+const router = useRouter();
+
+// 问卜相关状态
+const questionInput = ref('');
+const showQuestionInput = ref(false);
+const isAnalyzing = ref(false);
+
+// 专业问题推荐分类
+const professionalQuestions = {
+  '官司诉讼': [
+    '明天的官司能否胜诉？',
+    '这场法律纠纷何时能有结果？',
+    '选择哪位律师对案件更有利？',
+    '是否应该接受庭外和解？'
+  ],
+  '事业决策': [
+    '这个项目是否值得投资？',
+    '何时是跳槽的最佳时机？',
+    '与这个合作伙伴的生意能否成功？',
+    '公司上市的时机是否合适？'
+  ],
+  '重大抉择': [
+    '是否应该搬到新城市发展？',
+    '这段婚姻是否应该继续？',
+    '是否应该接受这个工作机会？',
+    '何时是购买房产的最佳时机？'
+  ],
+  '健康疾病': [
+    '这次手术的结果如何？',
+    '何时能够康复？',
+    '选择哪种治疗方案更好？',
+    '是否需要更换医生？'
+  ],
+  '财运投资': [
+    '这笔投资是否明智？',
+    '何时是出售股票的最佳时机？',
+    '这个生意伙伴是否可靠？',
+    '是否应该贷款创业？'
+  ],
+  '人际关系': [
+    '这个人是否值得信任？',
+    '如何化解与同事的矛盾？',
+    '这段感情是否有未来？',
+    '是否应该原谅对方？'
+  ]
+};
+
+// 快速问卜功能
+const quickDivination = async () => {
+  if (!questionInput.value.trim()) {
+    alert('请输入您要问卜的问题');
+    return;
+  }
+  
+  isAnalyzing.value = true;
+  
+  try {
+    // 跳转到奇门页面并传递问题
+    await router.push({
+      path: '/qimen',
+      query: { question: questionInput.value.trim() }
+    });
+  } catch (error) {
+    console.error('跳转失败:', error);
+    alert('跳转失败，请重试');
+  } finally {
+    isAnalyzing.value = false;
+  }
+};
+
+// 选择推荐问题
+const selectRecommendedQuestion = (question) => {
+  questionInput.value = question;
+};
 
 // 全局变量用于清理
 let scene, camera, renderer, controls, composer;
@@ -547,15 +622,14 @@ onMounted(() => {
         // 尝试从缓存获取几何体
         let txtGeo = geometryCache.get(textContent);
         if (!txtGeo) {
-          // 根据设备性能调整几何体复杂度
-          const curveSegments = mobileOptimizer.devicePerformance === 'low' ? 4 : 
-                               mobileOptimizer.devicePerformance === 'medium' ? 8 : 12;
+          // 强制使用高质量几何体设置
+          const curveSegments = 16; // 使用更高的细分数
           
           txtGeo = new TextGeometry(textContent, {
             font: font,
             size: size,
-            height: 0.003, // 降低高度，减少复杂度
-            curveSegments: curveSegments, // 根据性能调整
+            height: 0.01, // 恢复更高的高度，提升立体感
+            curveSegments: curveSegments, // 使用高质量设置
           });
           txtGeo.translate(offsetX, offsetY, 0);
           geometryCache.set(textContent, txtGeo);
@@ -605,8 +679,8 @@ onMounted(() => {
       });
       animationsToDispose.push(rotationAnimation);
 
-      // 只在高性能设备上添加复杂动画
-      if (mobileOptimizer.devicePerformance !== 'low') {
+      // 启用复杂动画（所有设备）
+      if (true) {
         const amColor = { r: 1, g: 1, b: 1 };
         const explode = gsap.timeline({ 
           repeat: -1, 
@@ -753,15 +827,10 @@ onMounted(() => {
     return bagua;
   };
 
-  // 创建粒子系统 - 优化版本
+  // 创建粒子系统 - 高质量版本
   const createParticles = () => {
-    // 根据设备性能调整粒子数量
-    let particlesCount = mobileOptimizer.optimizedSettings.particleCount;
-    
-    // 进一步降低低性能设备的粒子数量
-    if (mobileOptimizer.devicePerformance === 'low') {
-      particlesCount = Math.floor(particlesCount * 0.5);
-    }
+    // 强制使用高数量粒子
+    let particlesCount = 1000; // 使用固定的高数量
     
     const positions = new Float32Array(particlesCount * 3);
     
@@ -781,7 +850,7 @@ onMounted(() => {
     
     const particlesMaterial = new THREE.PointsMaterial({
       color: 0x88ccff,
-      size: mobileOptimizer.devicePerformance === 'low' ? 0.03 : 0.05,
+      size: 0.06, // 强制使用较大的粒子尺寸
       sizeAttenuation: true,
       transparent: true,
       depthWrite: false,
@@ -796,16 +865,14 @@ onMounted(() => {
     materialsToDispose.push(particlesMaterial);
     meshesToDispose.push(particles);
     
-    // 只在中高性能设备上添加粒子动画
-    if (mobileOptimizer.devicePerformance !== 'low') {
-      const particleAnimation = gsap.to(particles.rotation, {
-        duration: 120, // 延长动画时间，降低CPU占用
-        y: Math.PI * 2,
-        repeat: -1,
-        ease: 'none'
-      });
-      animationsToDispose.push(particleAnimation);
-    }
+    // 启用粒子动画
+    const particleAnimation = gsap.to(particles.rotation, {
+      duration: 80, // 稍微加快动画速度
+      y: Math.PI * 2,
+      repeat: -1,
+      ease: 'none'
+    });
+    animationsToDispose.push(particleAnimation);
     
     return particles;
   };
@@ -869,8 +936,8 @@ onMounted(() => {
   pointLight2.position.set(5, -2, 3);
   scene.add(pointLight2);
 
-  // 光源动画 - 优化版本
-  if (mobileOptimizer.devicePerformance !== 'low') {
+  // 光源动画 - 启用所有设备
+  if (true) {
     const lightAnimation1 = gsap.to(pointLight1.position, {
       duration: 6, // 延长动画时间
       x: 3,
@@ -911,14 +978,14 @@ onMounted(() => {
   camera.lookAt(scene.position);
   scene.add(camera);
 
-  // 渲染器
+  // 渲染器 - 强制使用高质量设置
   renderer = new THREE.WebGLRenderer({
     canvas: canvas.value,
-    antialias: mobileOptimizer.optimizedSettings.antialias,
+    antialias: true, // 强制开启抗锯齿
     alpha: true,
   });
   renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(mobileOptimizer.optimizedSettings.pixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 强制使用高像素比率
   
   // 将渲染器和场景设置为全局变量，供性能监控使用
   window.__THREE_RENDERER__ = renderer;
@@ -935,20 +1002,20 @@ onMounted(() => {
     }
   };
   
-  // 应用移动端优化
-  mobileOptimizer.adjustRenderQuality(renderer, scene, camera);
+  // 禁用移动端优化，保持高质量渲染
+  // mobileOptimizer.adjustRenderQuality(renderer, scene, camera);
 
   // 后期处理
   composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
-  // 添加适度的辉光效果
+  // 添加高质量的辉光效果
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(sizes.width, sizes.height),
-    mobileOptimizer.optimizedSettings.bloomStrength,  // 根据设备性能调整强度
-    0.2,  // 减小半径
-    0.9   // 提高阈值，让只有最亮的部分发光
+    0.4,  // 强制使用高强度辉光效果
+    0.3,  // 恢复半径
+    0.8   // 降低阈值，让更多部分发光
   );
   composer.addPass(bloomPass);
 
@@ -968,7 +1035,7 @@ onMounted(() => {
 
     if (renderer) {
       renderer.setSize(sizes.width, sizes.height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 保持高像素比率
     }
     
     // 更新composer大小
@@ -988,10 +1055,10 @@ onMounted(() => {
   controls.maxDistance = 50;
   controls.enablePan = false;
 
-  // 相机自动动画 - 优化版本
+  // 相机自动动画 - 恢复所有设备
   const cameraAnimation = () => {
-    // 只在高性能设备上启用相机动画
-    if (mobileOptimizer.devicePerformance === 'high') {
+    // 启用相机动画（所有设备）
+    if (true) {
       const timeline = gsap.timeline({
         repeat: -1, 
         repeatDelay: 10, // 增加重复延迟
@@ -1152,10 +1219,10 @@ onMounted(() => {
     frameCount++;
     const currentTime = Date.now();
     
-    // 应用帧率限制（统一处理）
-    let frameInterval = 1000 / mobileOptimizer.optimizedSettings.animationFPS;
+    // 移除帧率限制，让渲染以最佳性能运行
+    let frameInterval = 1000 / 60; // 强制60FPS
     
-    // 检查紧急帧率限制
+    // 只在紧急情况下限制帧率
     if (window.__EMERGENCY_FRAME_LIMIT__) {
       frameInterval = Math.max(frameInterval, window.__EMERGENCY_FRAME_LIMIT__);
     }
@@ -1217,6 +1284,85 @@ onUnmounted(() => {
     <!-- 性能监控组件 -->
     <PerformanceMonitor />
     
+    <!-- 专业问卜界面 -->
+    <div class="divination-overlay">
+      <!-- 主标题 -->
+      <div class="main-header">
+        <h1 class="main-title">奇门遁甲</h1>
+        <p class="main-subtitle">问天地玄机，卜万事吉凶</p>
+      </div>
+      
+      <!-- 快速问卜区域 -->
+      <div class="quick-divination">
+        <div class="divination-card">
+          <div class="card-header">
+            <span class="card-icon">🔮</span>
+            <span class="card-title">即时问卜</span>
+          </div>
+          
+          <div class="question-area">
+            <textarea 
+              v-model="questionInput"
+              placeholder="请输入您要问卜的问题&#10;例如：97年的我明天去打官司能不能赢？"
+              class="question-textarea"
+              rows="3"
+              maxlength="200"
+            ></textarea>
+            <div class="input-footer">
+              <span class="char-count">{{ questionInput.length }}/200</span>
+              <button 
+                @click="quickDivination"
+                :disabled="isAnalyzing || !questionInput.trim()"
+                class="divination-btn"
+              >
+                {{ isAnalyzing ? '问卜中...' : '立即问卜' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 问题推荐区域 -->
+      <div class="question-recommendations">
+        <h3 class="recommendations-title">常见问卜类型</h3>
+        <div class="categories">
+          <div v-for="(questions, category) in professionalQuestions" :key="category" class="category">
+            <h4 class="category-title">{{ category }}</h4>
+            <div class="question-list">
+              <button 
+                v-for="question in questions" 
+                :key="question"
+                @click="selectRecommendedQuestion(question)"
+                class="question-btn"
+              >
+                {{ question }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 功能入口 -->
+      <div class="function-entries">
+        <router-link to="/qimen" class="function-entry primary">
+          <span class="entry-icon">⚡</span>
+          <span class="entry-text">进入排盘</span>
+        </router-link>
+        <router-link to="/history" class="function-entry">
+          <span class="entry-icon">📋</span>
+          <span class="entry-text">历史记录</span>
+        </router-link>
+        <router-link to="/favorites" class="function-entry">
+          <span class="entry-icon">⭐</span>
+          <span class="entry-text">我的收藏</span>
+        </router-link>
+        <router-link to="/profile" class="function-entry">
+          <span class="entry-icon">👤</span>
+          <span class="entry-text">个人档案</span>
+        </router-link>
+      </div>
+    </div>
+    
     <!-- 添加文字动画容器 -->
     <div class="typing-container">
       <div class="typing-text" ref="typingText"></div>
@@ -1276,6 +1422,289 @@ canvas {
     font-size: 14px;
     padding: 10px 15px;
     max-width: 90%;
+  }
+}
+
+/* 专业问卜界面样式 */
+.divination-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+}
+
+.main-header {
+  text-align: center;
+  margin-bottom: 30px;
+  margin-top: 50px;
+}
+
+.main-title {
+  font-size: 3rem;
+  color: #d4af37;
+  margin: 0;
+  font-weight: 700;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+  letter-spacing: 2px;
+}
+
+.main-subtitle {
+  font-size: 1.2rem;
+  color: #b8860b;
+  margin: 10px 0 0 0;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.quick-divination {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 40px;
+}
+
+.divination-card {
+  background: linear-gradient(
+    135deg,
+    rgba(212, 175, 55, 0.1) 0%,
+    rgba(0, 0, 0, 0.8) 50%,
+    rgba(212, 175, 55, 0.1) 100%
+  );
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 15px;
+  padding: 25px;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(212, 175, 55, 0.2);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.card-icon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+}
+
+.card-title {
+  font-size: 1.3rem;
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.question-area {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.question-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  color: #d4af37;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.question-textarea:focus {
+  outline: none;
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+}
+
+.question-textarea::placeholder {
+  color: rgba(212, 175, 55, 0.5);
+  line-height: 1.4;
+}
+
+.input-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.char-count {
+  font-size: 0.9rem;
+  color: rgba(212, 175, 55, 0.6);
+}
+
+.divination-btn {
+  background: linear-gradient(135deg, #d4af37, #b8860b);
+  color: #000;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.divination-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.divination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.question-recommendations {
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 40px;
+}
+
+.recommendations-title {
+  text-align: center;
+  color: #d4af37;
+  font-size: 1.4rem;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.category {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+}
+
+.category-title {
+  color: #d4af37;
+  font-size: 1.1rem;
+  margin: 0 0 15px 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.question-btn {
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #d4af37;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.question-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateX(5px);
+}
+
+.function-entries {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.function-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 25px;
+  color: #d4af37;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.function-entry.primary {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.function-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.entry-icon {
+  font-size: 1.2rem;
+}
+
+.entry-text {
+  font-size: 0.95rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .main-title {
+    font-size: 2rem;
+  }
+  
+  .main-subtitle {
+    font-size: 1rem;
+  }
+  
+  .divination-card {
+    padding: 20px;
+  }
+  
+  .categories {
+    grid-template-columns: 1fr;
+  }
+  
+  .function-entries {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .function-entry {
+    width: 200px;
+    justify-content: center;
   }
 }
 </style>

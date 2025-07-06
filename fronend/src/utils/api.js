@@ -64,6 +64,11 @@ export const API_ENDPOINTS = {
   POINTS_GET: `${API_BASE_URL}/api/points`,
   POINTS_TRANSACTION: `${API_BASE_URL}/api/points/transaction`,
   
+  // 🆕 新增：签到系统端点
+  CHECKIN_STATUS: `${API_BASE_URL}/api/checkin/status`,
+  CHECKIN_DO: `${API_BASE_URL}/api/checkin`,
+  CHECKIN_HISTORY: `${API_BASE_URL}/api/checkin/history`,
+  
   // 用户信息 - 🔧 更新为新的端点
   USER_PROFILE: `${API_BASE_URL}/api/auth/profile`,
   

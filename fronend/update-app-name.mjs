@@ -17,7 +17,7 @@ const buildNumber = Math.floor(Date.now() / 1000); // Unix时间戳作为构建�
 
 // 生成新的APP名称和ID
 const appName = `奇门遁甲_${timeStamp}`;
-const appId = `com.yunqueqimen.app.${buildNumber}`;
+const appId = `com.guiguqimen.app.${buildNumber}`;
 
 console.log(`🔄 更新APP信息:`);
 console.log(`📱 应用名称: ${appName}`);

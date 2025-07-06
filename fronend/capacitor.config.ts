@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.yunqueqimen.app.1750352961',
+  appId: 'com.guiguqimen.app.1750352961',
   appName: '奇门遁甲_2025-06-19_17-09-21',
   webDir: 'dist',
   server: {

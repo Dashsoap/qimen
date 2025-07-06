@@ -1,30 +1,57 @@
 <template>
   <div class="qimen-container">
-    <div class="cosmic-header">
-      <div class="title-wrapper">
-        <h2 class="dao-title">奇门遁甲</h2>
-        <div class="dao-subtitle">玄机推演，运势如神</div>
-      </div>
-    </div>
-
     <div class="input-section">
       <div class="question-input">
         <input
           v-model="question"
           type="text"
           class="question-input-field"
-          placeholder="请输入占卜问题"
+          placeholder="请输入占卜问题（如：97年的我明天去打官司能不能赢？）"
           ref="questionInput"
           @compositionstart="isComposing = true"
           @compositionend="isComposing = false"
+          @keypress.enter="manualAnalyze"
         />
-        <button class="analyze-btn" @click="analyze" :disabled="loading">
-          {{ loading ? '启动中...' : '🔮 AI流式分析' }}
+        <button 
+          @click="showRecommendations = !showRecommendations" 
+          class="recommendation-toggle"
+          :class="{ active: showRecommendations }"
+        >
+          {{ showRecommendations ? '收起' : '📝 推荐' }}
         </button>
+      </div>
+      
+      <!-- 问题推荐区域 -->
+      <div v-if="showRecommendations" class="recommendations-panel">
+        <h4 class="panel-title">专业问卜类型</h4>
+        <div class="recommendation-categories">
+          <div v-for="(questions, category) in professionalQuestions" :key="category" class="rec-category">
+            <h5 class="rec-category-title">{{ category }}</h5>
+            <div class="rec-question-list">
+              <button 
+                v-for="q in questions" 
+                :key="q"
+                @click="selectRecommendedQuestion(q)"
+                class="rec-question-btn"
+              >
+                {{ q }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- 功能按钮 -->
       <div class="function-buttons">
+        <button 
+          @click="manualAnalyze"
+          class="function-btn analyze-btn"
+          :disabled="loading"
+          title="立即分析"
+        >
+          <span class="btn-icon">🔮</span>
+          <span class="btn-text">{{ loading ? '分析中...' : '立即分析' }}</span>
+        </button>
         <router-link to="/history" class="function-btn history-btn" title="查看历史记录">
           <span class="btn-icon">📜</span>
           <span class="btn-text">历史记录</span>
@@ -44,15 +71,7 @@
       />
     </div>
 
-    <!-- 分析结果 -->
-    <div class="result-display" v-if="result">
-      <div class="result-header">
-        <h3>分析结果</h3>
-      </div>
-      <div class="result-content">
-        {{ result }}
-      </div>
-    </div>
+
 
     <div class="result-section" v-if="panData">
       <div class="question-display" v-if="question">
@@ -160,10 +179,12 @@ import QimenItem from '../components/QimenItem.vue'
 import StreamAnalysis from '../components/StreamAnalysis.vue'
 import { useQimenStore } from "../stores/index"
 import { useQimenInfoStore } from "../stores/qimenInfoStore"
+import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
 const store = useQimenStore()
 const infoStore = useQimenInfoStore()
+const route = useRoute()
 const { panData } = storeToRefs(store)
 
 // 简单的响应式变量
@@ -173,6 +194,62 @@ const result = ref('')
 const questionInput = ref(null)
 const isComposing = ref(false)
 const streamAnalysis = ref(null)
+
+// 问题推荐功能
+const showRecommendations = ref(false)
+const professionalQuestions = {
+  '官司诉讼': [
+    '明天的官司能否胜诉？',
+    '这场法律纠纷何时能有结果？',
+    '选择哪位律师对案件更有利？',
+    '是否应该接受庭外和解？'
+  ],
+  '事业决策': [
+    '这个项目是否值得投资？',
+    '何时是跳槽的最佳时机？',
+    '与这个合作伙伴的生意能否成功？',
+    '公司上市的时机是否合适？'
+  ],
+  '重大抉择': [
+    '是否应该搬到新城市发展？',
+    '这段婚姻是否应该继续？',
+    '是否应该接受这个工作机会？',
+    '何时是购买房产的最佳时机？'
+  ],
+  '健康疾病': [
+    '这次手术的结果如何？',
+    '何时能够康复？',
+    '选择哪种治疗方案更好？',
+    '是否需要更换医生？'
+  ],
+  '财运投资': [
+    '这笔投资是否明智？',
+    '何时是出售股票的最佳时机？',
+    '这个生意伙伴是否可靠？',
+    '是否应该贷款创业？'
+  ],
+  '人际关系': [
+    '这个人是否值得信任？',
+    '如何化解与同事的矛盾？',
+    '这段感情是否有未来？',
+    '是否应该原谅对方？'
+  ]
+}
+
+// 选择推荐问题
+const selectRecommendedQuestion = async (questionText) => {
+  question.value = questionText
+  showRecommendations.value = false
+  
+  // 显示选择确认
+  console.log('🎯 已选择问题:', questionText)
+  
+  // 短暂延迟确保UI更新完成，然后自动开始分析
+  setTimeout(async () => {
+    console.log('🔮 自动开始分析推荐问题...')
+    await manualAnalyze()
+  }, 500) // 稍微延长一点，让用户看到问题已填入
+}
 
 // 排盘函数
 function paipan() {
@@ -249,6 +326,15 @@ async function analyze() {
   }
 }
 
+// 手动分析函数
+async function manualAnalyze() {
+  if (!question.value?.trim()) {
+    alert('请先输入占卜问题');
+    return;
+  }
+  await analyze();
+}
+
 // 处理流式分析完成事件
 function handleStreamAnalysisComplete(analysisResult) {
   console.log('🎉 流式分析完成:', analysisResult)
@@ -265,6 +351,16 @@ function handleStreamAnalysisComplete(analysisResult) {
 // 初始化
 onMounted(() => {
   paipan()
+  
+  // 检查路由参数中是否有问题
+  if (route.query.question) {
+    question.value = route.query.question
+    // 如果有问题，自动开始分析
+    setTimeout(async () => {
+      console.log('🔮 检测到从首页跳转的问题，自动开始分析...')
+      await analyze()
+    }, 800) // 稍微延迟确保组件完全加载
+  }
 })
 
 // 显示宫位信息
@@ -302,16 +398,52 @@ function showPalaceInfo(palaceName) {
   display: flex;
   gap: 10px;
   align-items: center;
+  margin-bottom: 15px;
 }
 
 .question-input-field {
   flex: 1;
-  padding: 12px;
-  border: 1px solid #333;
-  border-radius: 4px;
-  background: #111;
+  padding: 15px;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
   color: #d4af37;
   font-size: 16px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.question-input-field:focus {
+  outline: none;
+  border-color: #d4af37;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.question-input-field::placeholder {
+  color: rgba(212, 175, 55, 0.5);
+}
+
+.recommendation-toggle {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 8px;
+  padding: 15px 20px;
+  color: #d4af37;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.recommendation-toggle:hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.2));
+  transform: translateY(-1px);
+}
+
+.recommendation-toggle.active {
+  background: linear-gradient(135deg, #d4af37, #b8860b);
+  color: #000;
+  font-weight: 600;
 }
 
 .question-input-field::placeholder {
@@ -379,19 +511,22 @@ function showPalaceInfo(palaceName) {
 .function-buttons {
   display: flex;
   gap: 15px;
-  margin: 15px 0;
+  margin: 20px 0;
   justify-content: center;
   flex-wrap: wrap;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .function-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 12px 20px;
   background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
   border: 2px solid rgba(212, 175, 55, 0.3);
-  border-radius: 20px;
+  border-radius: 25px;
   color: #d4af37;
   text-decoration: none;
   font-weight: 500;
@@ -399,6 +534,9 @@ function showPalaceInfo(palaceName) {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  min-width: 100px;
+  justify-content: center;
 }
 
 .function-btn::before {
@@ -416,12 +554,30 @@ function showPalaceInfo(palaceName) {
   left: 100%;
 }
 
-.function-btn:hover {
+.function-btn:hover:not(:disabled) {
   transform: translateY(-3px);
   border-color: #d4af37;
   box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
   background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.08));
   color: #f4d03f;
+}
+
+.function-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.function-btn.analyze-btn {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  font-weight: 600;
+}
+
+.function-btn.analyze-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d4af37, #b8860b);
+  color: #000;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
 }
 
 .function-btn .btn-icon {
@@ -488,9 +644,52 @@ function showPalaceInfo(palaceName) {
     font-size: 16px; /* 防止iOS缩放 */
   }
   
-  .analyze-btn {
+  .recommendation-toggle {
     width: 100%;
-    padding: 15px;
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .function-buttons {
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .function-btn {
+    flex: 1;
+    padding: 12px 8px;
+    min-width: 80px;
+    font-size: 12px;
+  }
+  
+  .function-btn .btn-text {
+    font-size: 11px;
+  }
+  
+  /* 超小屏幕优化 */
+  @media (max-width: 480px) {
+    .function-btn {
+      padding: 10px 6px;
+      min-width: 70px;
+    }
+    
+    .function-btn .btn-icon {
+      font-size: 14px;
+    }
+    
+    .function-btn .btn-text {
+      font-size: 10px;
+    }
+  }
+  
+  .recommendations-panel {
+    margin-top: 10px;
+  }
+  
+  .rec-question-btn {
+    font-size: 13px;
+    padding: 8px 12px;
   }
 }
 
@@ -1302,6 +1501,138 @@ function showPalaceInfo(palaceName) {
   transform: none;
   box-shadow: none;
   opacity: 0.7;
+}
+
+/* 问题推荐功能样式 */
+.question-tools {
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.recommendation-toggle {
+  background: rgba(212, 175, 55, 0.1);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  padding: 10px 20px;
+  color: #d4af37;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.recommendation-toggle:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.recommendation-toggle.active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.recommendations-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(212, 175, 55, 0.05) 0%,
+    rgba(0, 0, 0, 0.8) 50%,
+    rgba(212, 175, 55, 0.05) 100%
+  );
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-title {
+  color: #d4af37;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.recommendation-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.rec-category {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.rec-category-title {
+  color: #d4af37;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.rec-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rec-question-btn {
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 5px;
+  padding: 8px 10px;
+  color: #d4af37;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  line-height: 1.3;
+}
+
+.rec-question-btn:hover {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.3);
+  transform: translateX(3px);
+}
+
+.rec-question-btn:active {
+  transform: translateX(1px);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .recommendation-categories {
+    grid-template-columns: 1fr;
+  }
+  
+  .rec-category {
+    padding: 12px;
+  }
+  
+  .rec-question-btn {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
 }
 
 </style>
