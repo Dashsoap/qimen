@@ -64,11 +64,11 @@ setup_java() {
 build_frontend() {
     print_step "构建前端项目..."
     
-    cd fronend
+    cd frontend
     
     # 检查package.json是否存在
     if [ ! -f package.json ]; then
-        print_error "fronend/package.json 不存在"
+        print_error "frontend/package.json 不存在"
         exit 1
     fi
     
@@ -105,7 +105,7 @@ copy_to_cordova() {
     fi
     
     # 复制构建文件
-    cp -r ../fronend/dist/* www/
+    cp -r ../frontend/dist/* www/
     
     # 验证复制是否成功
     if [ ! -f www/index.html ]; then

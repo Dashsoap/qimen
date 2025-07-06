@@ -13,7 +13,6 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import performanceManager from '../utils/performance.js';
 import mobileOptimizer from '../utils/mobile-optimization.js';
 import emergencyOptimizer from '../utils/emergency-optimization.js';
-import debugHelper from '../utils/debug-helper.js';
 import PerformanceMonitor from '../components/PerformanceMonitor.vue';
 import { useRouter } from 'vue-router';
 
@@ -136,7 +135,6 @@ const handleVisibilityChange = () => {
 
   // 清理资源函数 - 大幅改进
   const disposeThreeJSResources = () => {
-    console.log('🧹 开始清理Three.js资源...');
     
     // 停止所有动画
     if (animationId) {
@@ -286,7 +284,7 @@ const handleVisibilityChange = () => {
       window.gc();
     }
     
-    console.log('✅ Three.js资源清理完成');
+
   };
 
 // 函数变量已在上面声明
@@ -295,12 +293,7 @@ onMounted(() => {
   // 集成性能管理器
   performanceManager.addObserver((event, data) => {
     if (event === 'lowMemory' && data) {
-      console.log('🔥 3D场景进入低内存模式')
       // 可以在这里降低3D渲染质量
-    } else if (event === 'animationsPaused' && data) {
-      console.log('⏸️ 3D动画已暂停')
-    } else if (event === 'animationsPaused' && !data) {
-      console.log('▶️ 3D动画已恢复')
     }
   })
   
@@ -1250,9 +1243,6 @@ onMounted(() => {
     try {
       if (controls) controls.update();
       if (composer) composer.render();
-      
-      // 记录渲染帧用于调试
-      debugHelper.recordRender();
     } catch (error) {
       console.warn('渲染错误:', error);
     }

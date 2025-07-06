@@ -110,7 +110,7 @@ export class MCPServer {
         return;
       }
       
-      console.log(`🔧 调用工具: ${tool}`, parameters);
+      // 调用MCP工具
       
       const startTime = Date.now();
       const result = await this.tools.callTool(tool, parameters || {});

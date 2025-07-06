@@ -16,7 +16,7 @@ export class QimenTools {
       this.registerTool('get_time_energy', this.getTimeEnergy.bind(this));
       
       this.isInitialized = true;
-      console.log('🔧 MCP工具集初始化完成');
+      // MCP工具集初始化完成
     } catch (error) {
       console.error('❌ MCP工具集初始化失败:', error);
       throw error;

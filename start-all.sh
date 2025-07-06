@@ -12,7 +12,7 @@ if [ ! -d "node_modules" ]; then
 fi
 
 echo "📦 检查前端依赖..."
-cd ../fronend
+cd ../frontend
 if [ ! -d "node_modules" ]; then
     echo "安装前端依赖..."
     npm install
@@ -42,7 +42,7 @@ fi
 # 启动前端服务
 echo ""
 echo "🎨 启动前端服务..."
-cd ../fronend
+cd ../frontend
 npm run dev &
 FRONTEND_PID=$!
 

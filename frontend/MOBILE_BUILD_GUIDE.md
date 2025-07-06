@@ -53,7 +53,7 @@
 nvm use 20
 
 # 进入前端目录
-cd fronend
+cd frontend
 
 # 安装依赖
 npm install

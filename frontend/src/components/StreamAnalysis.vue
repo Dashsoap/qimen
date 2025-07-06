@@ -165,12 +165,6 @@ let progressInterval: NodeJS.Timeout | null = null;
 
 // 开始流式分析
 async function startStreamAnalysis() {
-  // 🔧 添加调试信息
-  console.log('🔍 流式分析调试信息:');
-  console.log('- props.questionValue:', props.questionValue);
-  console.log('- props.panData:', props.panData);
-  console.log('- questionValue type:', typeof props.questionValue);
-  console.log('- questionValue length:', props.questionValue?.length);
   
   // 🔧 更健壮的问题验证机制
   let questionText = '';
@@ -190,11 +184,8 @@ async function startStreamAnalysis() {
     const inputElement = document.querySelector('.question-input-field') as HTMLInputElement;
     if (inputElement && inputElement.value) {
       questionText = inputElement.value.trim();
-      console.log('🔧 从DOM元素获取问题:', questionText);
     }
   }
-  
-  console.log('🎯 最终使用的问题:', questionText);
   
   if (!questionText || questionText.length === 0) {
     alert('请先输入占卜问题\n调试信息: questionValue=' + JSON.stringify(props.questionValue));
@@ -206,7 +197,7 @@ async function startStreamAnalysis() {
     return;
   }
 
-  console.log('🚀 开始流式分析...', questionText);
+
   
   // 重置状态
   resetStreamState();
@@ -255,7 +246,7 @@ async function startFetchStream(questionText: string) {
     paipanData: props.panData
   };
 
-  console.log('📡 发送流式请求:', requestData);
+
 
   // 获取认证token
   const token = localStorage.getItem('token');
@@ -285,34 +276,26 @@ async function startFetchStream(questionText: string) {
       
       try {
         const errorText = await response.text();
-        console.log('📋 错误响应原始内容:', errorText);
         
         if (errorText) {
           try {
             const errorData = JSON.parse(errorText);
-            console.log('📋 解析后的错误数据:', errorData);
             
             // 优先使用message字段，它通常包含更详细的信息
             if (errorData.message) {
               errorMessage = errorData.message;
-              console.log('✅ 使用message字段:', errorMessage);
             } else if (errorData.error) {
               errorMessage = errorData.error;
-              console.log('✅ 使用error字段:', errorMessage);
             } else {
-              console.log('⚠️ 未找到message或error字段，使用原始文本');
               errorMessage = errorText;
             }
           } catch (parseError) {
-            console.log('⚠️ JSON解析失败，使用原始文本:', errorText);
             errorMessage = errorText;
           }
         }
       } catch (readError) {
-        console.log('⚠️ 读取响应体失败:', readError);
+        // 静默处理读取错误
       }
-      
-      console.log('🔴 最终错误信息:', errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -331,7 +314,6 @@ async function startFetchStream(questionText: string) {
       const { done, value } = await reader.read();
       
       if (done) {
-        console.log('✅ 流式响应完成');
         break;
       }
 
@@ -344,7 +326,7 @@ async function startFetchStream(questionText: string) {
             const data = JSON.parse(line.substring(6));
             handleStreamData(data);
           } catch (e) {
-            console.warn('解析数据失败:', line, e);
+            // 静默处理解析错误
           }
         }
       }
@@ -358,33 +340,21 @@ async function startFetchStream(questionText: string) {
 
 // 处理流式数据
 function handleStreamData(data: any) {
-  console.log('📨 收到流式数据:', data);
-  console.log('🔍 当前组件状态:', {
-    showStreamResult: showStreamResult.value,
-    isStreaming: isStreaming.value,
-    streamContent: streamContent.value?.length,
-    streamSteps: streamSteps.value.length
-  });
-
   switch (data.type) {
     case 'init':
-      console.log('🔮 处理初始化消息');
       addStreamStep('🔮', data.message || '正在启动分析...', data.timestamp);
       break;
       
     case 'step':
-      console.log('📍 处理步骤消息:', data.step, data.message);
       const stepIcons = ['📊', '🤖', '💫', '✨'];
       const icon = stepIcons[data.step - 1] || '📍';
       addStreamStep(icon, data.message, data.timestamp);
       break;
       
     case 'content':
-      console.log('📝 处理内容消息，长度:', data.fullContent?.length || data.content?.length);
       const newContent = data.fullContent || data.content || '';
       streamContent.value = newContent;
       updateProgress(Math.min(90, (newContent.length / 20))); // 根据内容长度估算进度
-      console.log('📝 内容已更新，当前长度:', streamContent.value?.length);
       break;
       
     case 'final':
@@ -419,7 +389,6 @@ function addStreamStep(icon: string, message: string, timestamp?: string) {
     timestamp: timestamp || new Date().toISOString()
   };
   streamSteps.value.push(newStep);
-  console.log('📋 步骤已添加:', newStep, '总步骤数:', streamSteps.value.length);
   
   // 强制触发响应式更新
   streamSteps.value = [...streamSteps.value];
@@ -465,13 +434,11 @@ function completeAnalysis() {
     steps: streamSteps.value
   });
 
-  console.log('🎉 流式分析完成!');
-  console.log('💾 对话历史已保存，当前对话数:', conversationHistory.value.length);
+
 }
 
 // 处理错误
 function handleStreamError(message: string) {
-  console.error('❌ 流式分析错误:', message);
   
   // 优化错误信息显示
   let displayMessage = message;
@@ -495,7 +462,6 @@ function handleStreamError(message: string) {
 
 // 停止分析
 function stopStreamAnalysis() {
-  console.log('⏹️ 停止流式分析');
   isStreaming.value = false;
   
   if (eventSource) {
@@ -543,9 +509,7 @@ async function askFollowUp() {
   currentQuestion.value = userFollowUp;
   followUpQuestion.value = '';
   
-  console.log('🔄 开始追问分析...');
-  console.log('📚 发送的完整上下文长度:', conversationContext.length, '字符');
-  console.log('❓ 新追问:', userFollowUp);
+
   
   // 开始新的分析，发送包含完整对话历史的上下文
   await startStreamAnalysisWithContext(contextualQuestion);
@@ -554,12 +518,9 @@ async function askFollowUp() {
 // 带上下文的分析函数
 async function startStreamAnalysisWithContext(contextualQuestion: string) {
   if (!props.panData) {
-    console.error('❌ 没有排盘数据');
     streamError.value = '请先进行排盘';
     return;
   }
-
-  console.log('🔮 开始带上下文的流式分析...');
   isStreaming.value = true;
   showStreamResult.value = true;
   streamError.value = '';

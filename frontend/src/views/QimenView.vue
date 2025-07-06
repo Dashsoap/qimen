@@ -241,12 +241,8 @@ const selectRecommendedQuestion = async (questionText) => {
   question.value = questionText
   showRecommendations.value = false
   
-  // 显示选择确认
-  console.log('🎯 已选择问题:', questionText)
-  
   // 短暂延迟确保UI更新完成，然后自动开始分析
   setTimeout(async () => {
-    console.log('🔮 自动开始分析推荐问题...')
     await manualAnalyze()
   }, 500) // 稍微延长一点，让用户看到问题已填入
 }
@@ -266,7 +262,6 @@ async function analyze() {
   
   // 2. 等待输入法完成（特别是中文输入法）
   if (isComposing.value) {
-    console.log('输入法正在组合中，等待完成...')
     await new Promise(resolve => setTimeout(resolve, 300))
   }
   
@@ -283,12 +278,7 @@ async function analyze() {
     question.value = questionText
   }
   
-  console.log('问题内容验证:', {
-    'question.value': question.value,
-    'DOM value': questionInput.value?.value,
-    'isComposing': isComposing.value,
-    'final text': questionText
-  })
+
   
   if (!questionText) {
     alert('请输入占卜问题\n\n调试信息：\n' + 
@@ -307,12 +297,8 @@ async function analyze() {
       paipan()
     }
     
-    // 调用真正的StreamAnalysis组件
-    console.log('🚀 启动流式AI分析...')
-    
     if (streamAnalysis.value && streamAnalysis.value.startStreamAnalysis) {
       await streamAnalysis.value.startStreamAnalysis()
-      console.log('✅ 流式分析已启动')
     } else {
       console.error('❌ StreamAnalysis组件未找到或方法不存在')
       throw new Error('流式分析组件加载失败')
@@ -337,14 +323,8 @@ async function manualAnalyze() {
 
 // 处理流式分析完成事件
 function handleStreamAnalysisComplete(analysisResult) {
-  console.log('🎉 流式分析完成:', analysisResult)
-  
   if (analysisResult && analysisResult.answer) {
     result.value = analysisResult.answer
-    console.log('📊 分析统计:')
-    console.log('- 分析时长:', Math.round((analysisResult.executionTime || 0) / 1000), '秒')
-    console.log('- 内容长度:', analysisResult.answer?.length || 0, '字符')
-    console.log('- 置信度:', Math.round((analysisResult.confidence || 0.92) * 100), '%')
   }
 }
 
@@ -357,7 +337,6 @@ onMounted(() => {
     question.value = route.query.question
     // 如果有问题，自动开始分析
     setTimeout(async () => {
-      console.log('🔮 检测到从首页跳转的问题，自动开始分析...')
       await analyze()
     }, 800) // 稍微延迟确保组件完全加载
   }

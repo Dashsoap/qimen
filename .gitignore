@@ -15,7 +15,7 @@ build/
 */build/
 .next/
 out/
-/fronend/android
+/frontend/android
 /qimen-apk
 # Environment variables
 .env

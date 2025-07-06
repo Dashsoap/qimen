@@ -566,16 +566,16 @@ class Qimen {
   //金函玉鏡 日家奇門
   gpan() {
     let start_jia = Config.jiazi().slice(0, 10);
-    //console.log("start_jia", start_jia);
+    
     let find_xun = Config.zip_dict(
       start_jia.map((i) => Config.new_list(Config.jiazi(), i).slice(0, 10)),
       start_jia
     );
-    //console.log("find_xun", find_xun);
+    
     let dgz = this.gangzhi()[2];
     let xun = Config.multi_key_dict_get(find_xun, dgz);
     if (!xun) xun = start_jia[0]; // 默认使用第一个甲
-    //console.log("xun", xun);
+    
     let start_gong_d = { 冬至: "艮離坎坤震巽", 夏至: "坤離巽坤離兌" };
     let yy_dun = { 冬至: "陽遁", 夏至: "陰遁" };
 
@@ -611,7 +611,7 @@ class Qimen {
     let c_gong = Config.new_list(Config.eight_gua, gong);
     let a_gong = Config.new_list(Config.eight_gua.slice().reverse(), gong);
     let close_ten_day = Config.new_list(Config.jiazi(), xun).slice(0, 10);
-    //console.log(close_ten_day);
+    
     let ying = Config.zip_dict(
       Config.new_list(
         Config.eight_gua,

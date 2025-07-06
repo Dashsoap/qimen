@@ -11,7 +11,7 @@ SERVER_USER="root"  # 根据实际情况修改用户名
 BACKEND_PATH="/home/qimen-backend"
 FRONTEND_PATH="/home/qimen-frontend"
 LOCAL_BACKEND_PATH="./backend"
-LOCAL_FRONTEND_PATH="./fronend"  # 使用实际的目录名称
+LOCAL_FRONTEND_PATH="./frontend"  # 使用实际的目录名称
 
 echo "🚀 开始部署奇门遁甲AI完整应用到 ${SERVER_IP}..."
 echo "📦 使用优化后的架构 (app.js + 模块化服务)"

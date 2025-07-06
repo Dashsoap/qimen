@@ -65,7 +65,7 @@ check_dir "backend/src/config"
 check_dir "backend/src/services"
 check_dir "backend/src/middleware"
 check_dir "backend/src/validation"
-check_dir "fronend"
+check_dir "frontend"
 
 echo ""
 echo "📄 检查配置文件..."
@@ -76,9 +76,9 @@ check_optional "backend/.env"
 echo ""
 echo "📋 检查前端文件..."
 echo "----------------------------------------"
-if [ -d "fronend" ]; then
-    check_file "fronend/package.json"
-    if [ -f "fronend/package.json" ]; then
+if [ -d "frontend" ]; then
+    check_file "frontend/package.json"
+    if [ -f "frontend/package.json" ]; then
         echo "✅ 前端项目结构检查通过"
     fi
 else

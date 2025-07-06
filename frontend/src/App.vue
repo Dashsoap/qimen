@@ -6,7 +6,7 @@ import performanceManager from './utils/performance.js'
 onMounted(() => {
   // 性能管理器会自动处理页面可见性和内存管理
   performanceManager.addObserver((event, data) => {
-    console.log(`性能事件: ${event}`, data)
+    // 可以在这里处理性能事件
   })
 })
 

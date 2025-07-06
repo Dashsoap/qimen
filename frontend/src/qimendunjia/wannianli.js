@@ -219,7 +219,7 @@ let WanNianLi = (function () {
       m = getMonthBase(month),
       d = date,
       x = getCenturyConst(getCenturyByYear(year));
-    // console.log('s:%s,u:%s,m:%s,d:%s,x:%s', s, u, m, d, x);
+    
     let r = parseInt(s / 4) * 6 + 5 * (parseInt(s / 4) * 3 + u) + m + d + x;
     if (isRunnian(year) && month > 2) {
       r += 1;
@@ -378,5 +378,5 @@ let WanNianLi = (function () {
 // };
 
 // let result = WanNianLi.getResult(a);
-// console.log(result);
+
 export default WanNianLi;

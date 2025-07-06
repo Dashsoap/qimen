@@ -64,7 +64,7 @@ PUT    /api/qimen/favorites/:recordId # 更新收藏备注
 ### 前端架构
 
 ```
-fronend/src/
+frontend/src/
 ├── views/
 │   ├── HistoryView.vue      # 历史记录页面
 │   ├── FavoritesView.vue    # 收藏夹页面
