@@ -119,7 +119,6 @@ onUnmounted(() => {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 90px;
   position: relative;
   z-index: 1;
 }
