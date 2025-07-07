@@ -69,12 +69,11 @@ else
 fi
 
 echo ""
-echo "🔄 正在重启后端服务..."
+echo "�� 正在重启后端服务..."
 
-# 停止所有可能的Node.js进程
+# 停止可能运行的进程
+echo "⏹️ 停止现有进程..."
 pkill -f "node.*app.js" || true
-pkill -f "node.*server.js" || true
-pkill -f "node.*index.js" || true
 
 # 进入后端目录
 cd /home/qimen-backend

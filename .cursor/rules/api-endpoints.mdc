@@ -1,0 +1,211 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 奇门遁甲AI系统 - API接口规则
+
+## 🌐 API端点总览
+
+系统提供完整的RESTful API，所有接口通过 [app.js](mdc:backend/app.js) 统一处理。
+
+### 🔗 基础URL
+- **开发环境**: `http://localhost:3001`
+- **生产环境**: `http://101.201.148.8:3001`
+- **前端代理**: `http://localhost:5173` (通过Vite代理)
+
+## 🔐 认证系统接口
+
+### 用户注册
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "123456",
+  "phone": "13800138000"  // 可选
+}
+```
+
+### 用户登录
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "testuser",
+  "password": "123456"
+}
+```
+
+### 获取用户资料
+```http
+GET /api/auth/profile
+Authorization: Bearer <JWT_TOKEN>
+```
+
+### 用户登出
+```http
+POST /api/auth/logout
+Authorization: Bearer <JWT_TOKEN>
+```
+
+## 💰 积分系统接口
+
+### 查询积分
+```http
+GET /api/points
+Authorization: Bearer <JWT_TOKEN>
+```
+
+### 积分交易
+```http
+POST /api/points/transaction
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "amount": 100,
+  "type": "earned",  // 或 "spent"
+  "description": "签到奖励"
+}
+```
+
+### 积分转账
+```http
+POST /api/points/transfer
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "toUserId": "user-id",
+  "amount": 50,
+  "description": "转账说明"
+}
+```
+
+### 积分历史
+```http
+GET /api/points/history?page=1&limit=10
+Authorization: Bearer <JWT_TOKEN>
+```
+
+## 📅 签到系统接口
+
+### 签到状态查询
+```http
+GET /api/checkin/status
+Authorization: Bearer <JWT_TOKEN>
+```
+
+### 执行签到
+```http
+POST /api/checkin
+Authorization: Bearer <JWT_TOKEN>
+```
+
+### 签到历史
+```http
+GET /api/checkin/history
+Authorization: Bearer <JWT_TOKEN>
+```
+
+## 🔮 奇门遁甲接口
+
+### 排盘生成
+```http
+POST /api/qimen/paipan
+Content-Type: application/json
+
+{
+  "question": "今日运势如何？"
+}
+```
+
+### AI分析（标准版）
+```http
+POST /api/analysis/qimen
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "question": "今日投资运势如何？",
+  "paipanData": {
+    "宫1": {"八门": "开门", "九星": "天心星", ...},
+    "宫2": {"八门": "休门", "九星": "天蓬星", ...}
+  }
+}
+```
+
+### AI分析（简单版）
+```http
+POST /api/analysis/qimen/simple
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+```
+
+### AI分析（流式版）
+```http
+POST /api/analysis/qimen/stream
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+```
+
+## 🏥 系统接口
+
+### 健康检查
+```http
+GET /health
+```
+
+### 服务器信息
+```http
+GET /
+```
+
+## 🔑 认证说明
+
+### JWT Token使用
+1. 登录成功后获得token
+2. 在请求头中添加: `Authorization: Bearer <token>`
+3. Token默认有效期7天
+4. 受保护的接口都需要有效token
+
+### 积分消费
+- AI分析功能需要消费积分
+- 标准分析: 100积分
+- 简单分析: 50积分
+- 流式分析: 100积分
+
+## 📊 响应格式
+
+### 成功响应
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "操作成功"
+}
+```
+
+### 错误响应
+```json
+{
+  "success": false,
+  "error": "错误类型",
+  "message": "详细错误信息"
+}
+```
+
+## 🚨 限流策略
+
+- 普通用户: 2次/分钟
+- 高级用户(5000+积分): 5次/分钟  
+- VIP用户(10000+积分): 10次/分钟
+- 认证接口: 5次/15分钟
+
+## 📝 测试用例
+
+参考 [backend/AUTH_SYSTEM_README.md](mdc:backend/AUTH_SYSTEM_README.md) 中的测试示例。

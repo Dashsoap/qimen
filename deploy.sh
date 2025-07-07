@@ -410,9 +410,7 @@ ssh ${SERVER_USER}@${SERVER_IP} << 'EOF'
     # 停止现有服务
     echo "⏹️ 停止现有服务..."
     systemctl stop nginx || true
-    pkill -f "node.*server.js" || true
-    pkill -f "node.*app.js" || true
-    pkill -f "node.*simple-server.js" || true
+            pkill -f "node.*app.js" || true
     sleep 3
 
     # 安装系统依赖

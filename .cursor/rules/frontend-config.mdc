@@ -1,0 +1,211 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 奇门遁甲AI系统 - 前端配置规则
+
+## 🎨 前端技术栈
+
+- **框架**: Vue 3 + Composition API
+- **构建工具**: Vite 5.x
+- **UI组件**: Ant Design Vue 4.x
+- **状态管理**: Pinia
+- **路由**: Vue Router 4.x
+- **HTTP客户端**: Axios
+
+## 📁 前端目录结构
+
+```
+frontend/
+├── src/
+│   ├── App.vue              # 主应用组件
+│   ├── main.js              # 应用入口
+│   ├── utils/               # 工具函数
+│   │   ├── api.js           # API配置中心
+│   │   ├── mobile-http.js   # 移动端HTTP处理
+│   │   └── qimenApi.js      # 奇门遁甲API
+│   ├── views/               # 页面组件
+│   ├── components/          # 通用组件
+│   ├── router/              # 路由配置
+│   └── stores/              # Pinia状态管理
+├── vite.config.js           # Vite配置
+├── capacitor.config.ts      # 移动端打包配置
+└── package.json             # 依赖管理
+```
+
+## 🌐 API配置中心
+
+### API基础配置 ([utils/api.js](mdc:frontend/src/utils/api.js))
+
+```javascript
+// 智能环境检测
+const getApiBaseUrl = () => {
+  // 移动端强制使用服务器
+  if (isMobile) {
+    return 'http://101.201.148.8:3001';
+  }
+  
+  // Web端本地开发使用代理
+  if (isLocalDev) {
+    return ''; // 空字符串使用Vite代理
+  }
+  
+  // 其他情况使用服务器
+  return 'http://101.201.148.8:3001';
+};
+```
+
+### API端点配置
+```javascript
+export const API_ENDPOINTS = {
+  // 认证系统
+  AUTH_LOGIN: `${API_BASE_URL}/api/auth/login`,
+  AUTH_REGISTER: `${API_BASE_URL}/api/auth/register`,
+  AUTH_PROFILE: `${API_BASE_URL}/api/auth/profile`,
+  
+  // 积分系统
+  POINTS_GET: `${API_BASE_URL}/api/points`,
+  POINTS_TRANSACTION: `${API_BASE_URL}/api/points/transaction`,
+  
+  // 签到系统
+  CHECKIN_STATUS: `${API_BASE_URL}/api/checkin/status`,
+  CHECKIN_DO: `${API_BASE_URL}/api/checkin`,
+  
+  // 奇门遁甲
+  QIMEN_PAIPAN: `${API_BASE_URL}/api/qimen/paipan`,
+  QIMEN_ANALYSIS: `${API_BASE_URL}/api/analysis/qimen`,
+  QIMEN_ANALYSIS_STREAM: `${API_BASE_URL}/api/analysis/qimen/stream`,
+  
+  // 健康检查
+  HEALTH_CHECK: `${API_BASE_URL}/health`
+};
+```
+
+## 🔧 Vite配置 ([vite.config.js](mdc:frontend/vite.config.js))
+
+### 开发代理配置
+```javascript
+export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false
+      },
+      '/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
+})
+```
+
+### 代理工作原理
+- **前端请求**: `http://localhost:5173/api/auth/login`
+- **代理转发**: `http://localhost:3001/api/auth/login`
+- **避免CORS**: 开发环境无跨域问题
+
+## 📱 移动端配置
+
+### Capacitor配置 ([capacitor.config.ts](mdc:frontend/capacitor.config.ts))
+```typescript
+const config: CapacitorConfig = {
+  appId: 'com.guigu.qimen',
+  appName: '鬼谷奇门',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https'
+  }
+};
+```
+
+### 移动端API处理
+- **自动检测**: 移动端环境自动使用服务器地址
+- **网络优化**: 专门的移动端HTTP处理 ([mobile-http.js](mdc:frontend/src/utils/mobile-http.js))
+- **错误重试**: 智能重试机制和备用服务器
+
+## 🚀 开发启动
+
+### 本地开发
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 移动端开发
+```bash
+# Android
+npm run android
+
+# iOS  
+npm run ios
+```
+
+### 生产构建
+```bash
+npm run build
+```
+
+## 🎯 页面路由
+
+### 主要页面
+- `/home` - 首页
+- `/qimen` - 奇门遁甲分析
+- `/profile` - 用户中心
+- `/about` - 关于页面
+
+### 路由配置
+参考 [router/](mdc:frontend/src/router) 目录下的路由配置文件。
+
+## 🔐 认证状态管理
+
+### Token管理
+- 登录成功后自动存储token
+- 请求拦截器自动添加Authorization头
+- Token过期自动跳转登录页
+
+### 用户状态
+使用Pinia管理用户登录状态和积分信息。
+
+## 📊 性能优化
+
+### 缓存策略
+- API响应缓存
+- 图片资源懒加载
+- 组件按需加载
+
+### 移动端优化
+- 专门的移动端性能管理器
+- 内存管理和页面可见性检测
+- 网络状态检测和离线处理
+
+## 🛠️ 开发工具
+
+### 调试工具
+- Vue DevTools
+- PageSpy (生产环境监控)
+- Vite开发服务器热重载
+
+### 代码规范
+- ESLint配置
+- Vue 3 Composition API最佳实践
+- TypeScript支持
+
+## 📝 常见问题
+
+### API调用失败
+1. 检查后端服务是否启动 (`node backend/app.js`)
+2. 确认代理配置正确
+3. 检查网络连接和防火墙设置
+
+### 移动端问题
+1. 确保服务器地址可访问
+2. 检查移动设备网络设置
+3. 查看移动端调试日志

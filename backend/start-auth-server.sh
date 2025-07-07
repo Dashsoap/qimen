@@ -1,124 +1,97 @@
 #!/bin/bash
 
-# 鬼谷奇门遁甲 - 认证服务器启动脚本
+# 奇门遁甲AI用户认证系统启动脚本
+# 现在使用统一的app.js架构
 
-echo "🔮 ======================================="
-echo "   鬼谷奇门遁甲 - 认证服务器启动器"
-echo "🔮 ======================================="
-echo ""
+echo "🔐 启动奇门遁甲AI用户认证系统"
+echo "========================================"
 
-# 检查Node.js版本
-echo "🔍 检查Node.js版本..."
-node_version=$(node -v)
-echo "✅ Node.js版本: $node_version"
+# 检查环境
+echo "📋 检查运行环境..."
 
-# 检查npm依赖
-echo ""
-echo "📦 检查依赖包..."
-if [ ! -d "node_modules" ]; then
-    echo "⚠️  依赖包未安装，正在安装..."
-    npm install
-else
-    echo "✅ 依赖包已安装"
+# 检查Node.js
+if ! command -v node &> /dev/null; then
+    echo "❌ 错误: 未安装Node.js"
+    echo "请访问 https://nodejs.org 安装Node.js"
+    exit 1
 fi
 
-# 检查数据库
-echo ""
-echo "🗄️  检查数据库..."
-if [ ! -f "prisma/dev.db" ]; then
-    echo "⚠️  数据库未初始化，正在初始化..."
-    npm run init-db
-else
-    echo "✅ 数据库已就绪"
+echo "✅ Node.js版本: $(node --version)"
+
+# 检查npm
+if ! command -v npm &> /dev/null; then
+    echo "❌ 错误: 未安装npm"
+    exit 1
 fi
 
-# 显示功能列表
-echo ""
-echo "📋 服务器功能列表:"
-echo "   ✅ 用户注册/登录"
-echo "   ✅ JWT安全认证"
-echo "   ✅ 积分系统"
-echo "   ✅ 数据库集成"
-echo "   ✅ AI智能解盘"
-echo "   ✅ 安全防护"
-echo "   ✅ 限流保护"
-echo ""
+echo "✅ npm版本: $(npm --version)"
 
-# 显示API端点
-echo "🌐 API端点:"
-echo "   POST /api/auth/register   - 用户注册"
-echo "   POST /api/auth/login      - 用户登录"
-echo "   GET  /api/auth/profile    - 获取资料"
-echo "   GET  /api/points          - 查看积分"
-echo "   POST /api/points/transaction - 积分交易"
-echo "   POST /api/qimen/paipan    - 奇门排盘"
-echo "   POST /api/analysis/qimen  - AI分析"
+# 检查主文件
+if [ ! -f "app.js" ]; then
+    echo "❌ 错误: app.js 文件不存在"
+    echo "请确保您在正确的目录中"
+    exit 1
+fi
+
+echo "✅ 主文件检查通过"
+
+# 检查配置文件
 echo ""
+echo "🔧 检查配置文件..."
 
-# 启动选项
-echo "🚀 启动选项:"
-echo "   1) 启动认证服务器 (推荐)"
-echo "   2) 启动简单服务器 (旧版)"
-echo "   3) 运行测试脚本"
-echo "   4) 查看服务状态"
-echo "   5) 退出"
+if [ ! -f "config.env" ]; then
+    echo "❌ 错误: config.env 配置文件不存在"
+    echo "正在创建默认配置文件..."
+    
+    cat > config.env << 'EOF'
+NODE_ENV=development
+PORT=3001
+DATABASE_URL="file:./prisma/dev.db"
+
+# JWT配置
+JWT_SECRET=your-super-secure-jwt-secret-change-this-in-production
+JWT_EXPIRES_IN=7d
+BCRYPT_ROUNDS=12
+
+# AI服务配置
+ARK_API_KEY=UfI4GzNm9vAyT7I0Nf2CKEwseNqy91AZvkI7hrSCw0otnSeDgDExgE706gdEJHWU1OajYPCVNCPEsGJRVtScxw
+ARK_BASE_URL=https://www.sophnet.com/api/open-apis/v1
+ARK_MODEL=DeepSeek-R1
+EOF
+
+    echo "✅ 默认配置文件已创建"
+fi
+
+echo "✅ 配置文件检查通过"
+
+# 安装依赖
 echo ""
+echo "📦 安装依赖..."
+npm install
 
-read -p "请选择 (1-5): " choice
+if [ $? -ne 0 ]; then
+    echo "❌ 依赖安装失败"
+    exit 1
+fi
 
-case $choice in
-    1)
-        echo ""
-        echo "🚀 启动认证服务器..."
-        echo "🌐 服务地址: http://localhost:3001"
-        echo "🔒 按 Ctrl+C 停止服务器"
-        echo ""
-        node server.js
-        ;;
-    2)
-        echo ""
-        echo "🚀 启动简单服务器..."
-        echo "🌐 服务地址: http://localhost:3001"
-        echo "🔒 按 Ctrl+C 停止服务器"
-        echo ""
-        node simple-server.js
-        ;;
-    3)
-        echo ""
-        echo "🧪 准备运行测试..."
-        echo "请先在另一个终端启动服务器："
-        echo "node server.js"
-        echo ""
-        read -p "服务器已启动？(y/n): " confirm
-        if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-            echo "🧪 开始运行测试..."
-            node test-auth.js run
-        else
-            echo "❌ 测试取消"
-        fi
-        ;;
-    4)
-        echo ""
-        echo "🔍 检查服务状态..."
-        if curl -s http://localhost:3001/health > /dev/null; then
-            echo "✅ 服务器运行正常"
-            curl -s http://localhost:3001/ | grep -o '"message":"[^"]*"' | sed 's/"message":"//g' | sed 's/"//g'
-        else
-            echo "❌ 服务器未运行"
-            echo "请先启动服务器: node server.js"
-        fi
-        ;;
-    5)
-        echo ""
-        echo "👋 再见！"
-        exit 0
-        ;;
-    *)
-        echo ""
-        echo "❌ 无效选择"
-        echo "请选择 1-5"
-        ;;
-esac
+echo "✅ 依赖安装完成"
 
+# 数据库初始化
 echo ""
-echo "🔮 感谢使用鬼谷奇门遁甲系统！" 
+echo "🗄️ 初始化数据库..."
+npx prisma generate
+npx prisma db push
+
+if [ $? -ne 0 ]; then
+    echo "❌ 数据库初始化失败"
+    exit 1
+fi
+
+echo "✅ 数据库初始化完成"
+
+# 启动服务
+echo ""
+echo "🚀 启动奇门遁甲AI认证系统..."
+echo "使用统一的app.js架构"
+
+node app.js 

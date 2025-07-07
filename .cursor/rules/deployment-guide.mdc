@@ -1,0 +1,262 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 奇门遁甲AI系统 - 部署指南
+
+## 🚀 快速启动
+
+### 开发环境（本地）
+```bash
+# 1. 启动后端
+cd backend
+node app.js
+
+# 2. 启动前端（新终端）
+cd frontend  
+npm run dev
+
+# 访问: http://localhost:5173
+```
+
+### 一键启动脚本
+```bash
+# 前后端一体化启动
+./start-all.sh
+```
+
+## 🔧 后端启动方式
+
+### 方式一：直接启动 [app.js](mdc:backend/app.js)
+```bash
+cd backend
+node app.js                    # 开发环境
+NODE_ENV=production node app.js  # 生产环境
+```
+
+### 方式二：使用启动脚本
+```bash
+./backend/start.sh              # 简单启动
+./backend/start-server.sh       # 守护进程模式
+./backend/start-auth-server.sh  # 带环境检查的启动
+```
+
+### 方式三：PM2管理（生产推荐）
+```bash
+pm2 start backend/app.js --name "qimen-ai"
+pm2 logs qimen-ai
+pm2 restart qimen-ai
+pm2 stop qimen-ai
+```
+
+## 🌐 生产环境部署
+
+### 服务器部署（使用 [deploy.sh](mdc:deploy.sh)）
+```bash
+# 一键部署到生产服务器
+./deploy.sh
+```
+
+### 部署特点
+- **自动化部署**: 打包、上传、配置一体化
+- **零停机更新**: 平滑重启服务
+- **环境配置**: 自动切换生产配置
+- **健康检查**: 部署后自动验证服务状态
+
+### 生产服务器配置
+- **服务器地址**: 101.201.148.8
+- **后端端口**: 3001
+- **前端访问**: 通过Nginx反向代理
+- **数据库**: 生产环境SQLite
+
+## 📊 服务管理
+
+### 服务状态检查
+```bash
+# 使用部署脚本检查
+ssh root@101.201.148.8 '/home/manage-services.sh status'
+
+# 手动检查
+curl http://localhost:3001/health
+curl http://localhost:5173/health
+```
+
+### 服务操作
+```bash
+# 在服务器上
+/home/manage-services.sh start    # 启动
+/home/manage-services.sh stop     # 停止  
+/home/manage-services.sh restart  # 重启
+/home/manage-services.sh logs     # 查看日志
+```
+
+### 进程管理
+```bash
+# 查看运行中的服务
+ps aux | grep "node.*app.js"
+ps aux | grep "vite"
+
+# 停止服务
+pkill -f "node.*app.js"
+pkill -f "vite"
+
+# 端口检查
+lsof -ti:3001,5173
+```
+
+## 🗄️ 数据库管理
+
+### 开发环境
+```bash
+cd backend
+npx prisma studio          # 可视化管理界面
+npx prisma db push         # 推送schema变更
+npx prisma generate        # 生成客户端
+```
+
+### 生产环境
+```bash
+# 数据库迁移
+NODE_ENV=production npx prisma db push
+
+# 备份数据库
+cp prisma/prod.db backup/prod-$(date +%Y%m%d).db
+```
+
+## 📋 配置管理
+
+### 环境变量配置
+- **开发环境**: [config.env](mdc:backend/config.env)
+- **生产环境**: [config.prod.env](mdc:backend/config.prod.env)
+
+### 关键配置项
+```env
+NODE_ENV=production
+PORT=3001
+DATABASE_URL="file:./prisma/prod.db"
+JWT_SECRET=your-super-secure-jwt-secret
+ARK_API_KEY=your-ai-api-key
+```
+
+### 安全配置检查
+```bash
+# 检查配置是否正确
+cd backend
+npm run config:validate  # 如果有的话
+```
+
+## 🚨 监控和日志
+
+### 日志文件位置
+- **后端日志**: `backend/app.log`
+- **前端日志**: 浏览器控制台
+- **Nginx日志**: `/var/log/nginx/`
+
+### 日志查看
+```bash
+# 实时日志
+tail -f backend/app.log
+
+# 错误日志
+grep ERROR backend/app.log
+
+# 服务器日志
+ssh root@101.201.148.8 'tail -f /home/qimen-backend/app.log'
+```
+
+### 性能监控
+```bash
+# 系统资源使用
+htop
+free -h
+df -h
+
+# Node.js进程监控
+pm2 monit  # 如果使用PM2
+```
+
+## 🔒 安全配置
+
+### 防火墙配置
+```bash
+# 开放必要端口
+sudo ufw allow 3001/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+```
+
+### SSL配置（生产环境）
+```bash
+# 使用Let's Encrypt
+sudo certbot --nginx -d yourdomain.com
+```
+
+### 备份策略
+```bash
+# 数据库备份
+cp backend/prisma/prod.db backup/
+
+# 代码备份
+tar -czf backup/code-$(date +%Y%m%d).tar.gz backend/ frontend/
+```
+
+## 🧪 测试和验证
+
+### 接口连通性测试
+```bash
+# 健康检查
+curl http://localhost:3001/health
+
+# API测试
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","email":"test@example.com","password":"123456"}'
+```
+
+### 前端测试
+```bash
+# 前端构建测试
+cd frontend
+npm run build
+npm run preview
+```
+
+### 端到端测试
+参考之前的连通性测试报告，包含完整的API测试用例。
+
+## 🛠️ 故障排除
+
+### 常见问题
+
+#### 后端启动失败
+1. 检查端口占用: `lsof -ti:3001`
+2. 检查配置文件: 确保`config.env`存在
+3. 检查依赖: `npm install`
+4. 检查数据库: `npx prisma db push`
+
+#### 前端无法访问后端
+1. 检查代理配置: [vite.config.js](mdc:frontend/vite.config.js)
+2. 检查后端是否运行: `curl http://localhost:3001/health`
+3. 检查CORS配置: 查看后端中间件设置
+
+#### 生产环境部署失败
+1. 检查服务器连接: `ssh root@101.201.148.8`
+2. 检查磁盘空间: `df -h`
+3. 检查端口占用: `netstat -tulnp | grep :3001`
+4. 查看部署日志: 检查deploy.sh执行输出
+
+### 应急处理
+```bash
+# 快速重启所有服务
+./diagnose-server.sh
+
+# 回滚到上一版本（如果有备份）
+cd backup && tar -xzf latest-backup.tar.gz
+```
+
+## 📞 技术支持
+
+- **文档**: 查看 [README.md](mdc:backend/README.md) 和 [AUTH_SYSTEM_README.md](mdc:backend/AUTH_SYSTEM_README.md)
+- **日志**: 查看相应的日志文件进行问题诊断
+- **监控**: 使用健康检查接口监控服务状态
