@@ -361,11 +361,12 @@ function showPalaceInfo(palaceName) {
 /* 简化样式 */
 .qimen-container {
   font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-  color: #d4af37;
-  background: #000;
+  color: var(--theme-primary);
+  background: var(--theme-background);
   padding: 20px;
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 /* 输入区域样式 */
@@ -383,10 +384,10 @@ function showPalaceInfo(palaceName) {
 .question-input-field {
   flex: 1;
   padding: 15px;
-  border: 2px solid rgba(212, 175, 55, 0.3);
+  border: 2px solid var(--theme-border);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #d4af37;
+  background: var(--theme-background-mute);
+  color: var(--theme-primary);
   font-size: 16px;
   font-family: inherit;
   transition: all 0.3s ease;
@@ -394,20 +395,20 @@ function showPalaceInfo(palaceName) {
 
 .question-input-field:focus {
   outline: none;
-  border-color: #d4af37;
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 10px var(--theme-glow);
 }
 
 .question-input-field::placeholder {
-  color: rgba(212, 175, 55, 0.5);
+  color: var(--theme-text-muted);
 }
 
 .recommendation-toggle {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, var(--theme-glow), rgba(212, 175, 55, 0.1));
+  border: 1px solid var(--theme-border-hover);
   border-radius: 8px;
   padding: 15px 20px;
-  color: #d4af37;
+  color: var(--theme-primary);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -415,25 +416,25 @@ function showPalaceInfo(palaceName) {
 }
 
 .recommendation-toggle:hover {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.2));
+  background: linear-gradient(135deg, var(--theme-border-hover), var(--theme-glow));
   transform: translateY(-1px);
 }
 
 .recommendation-toggle.active {
-  background: linear-gradient(135deg, #d4af37, #b8860b);
-  color: #000;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-light));
+  color: var(--theme-background);
   font-weight: 600;
 }
 
 .question-input-field::placeholder {
-  color: #666;
+  color: var(--theme-text-muted);
 }
 
 .analyze-btn {
   padding: 14px 24px;
-  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%);
-  color: #000;
-  border: 2px solid rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-light) 50%, var(--theme-primary) 100%);
+  color: var(--theme-background);
+  border: 2px solid var(--theme-border);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -443,7 +444,7 @@ function showPalaceInfo(palaceName) {
   overflow: hidden;
   transition: all 0.3s ease;
   box-shadow: 
-    0 4px 15px rgba(212, 175, 55, 0.3),
+    0 4px 15px var(--theme-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -465,15 +466,15 @@ function showPalaceInfo(palaceName) {
 .analyze-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 
-    0 6px 20px rgba(212, 175, 55, 0.4),
+    0 6px 20px var(--theme-border-hover),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border-color: rgba(212, 175, 55, 0.6);
+  border-color: var(--theme-border-hover);
 }
 
 .analyze-btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 
-    0 2px 10px rgba(212, 175, 55, 0.3),
+    0 2px 10px var(--theme-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -481,8 +482,8 @@ function showPalaceInfo(palaceName) {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  background: #666;
-  border-color: #444;
+  background: var(--theme-text-muted);
+  border-color: var(--theme-border);
   box-shadow: none;
 }
 
@@ -503,10 +504,10 @@ function showPalaceInfo(palaceName) {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
-  border: 2px solid rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, var(--theme-glow), rgba(212, 175, 55, 0.05));
+  border: 2px solid var(--theme-border);
   border-radius: 25px;
-  color: #d4af37;
+  color: var(--theme-primary);
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
@@ -525,7 +526,7 @@ function showPalaceInfo(palaceName) {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--theme-glow), transparent);
   transition: left 0.5s ease;
 }
 
@@ -535,10 +536,10 @@ function showPalaceInfo(palaceName) {
 
 .function-btn:hover:not(:disabled) {
   transform: translateY(-3px);
-  border-color: #d4af37;
-  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.08));
-  color: #f4d03f;
+  border-color: var(--theme-primary);
+  box-shadow: 0 8px 25px var(--theme-glow);
+  background: linear-gradient(135deg, var(--theme-border-hover), var(--theme-glow));
+  color: var(--theme-primary-light);
 }
 
 .function-btn:disabled {
@@ -548,15 +549,15 @@ function showPalaceInfo(palaceName) {
 }
 
 .function-btn.analyze-btn {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
-  border: 2px solid rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, var(--theme-glow), var(--theme-border));
+  border: 2px solid var(--theme-border-hover);
   font-weight: 600;
 }
 
 .function-btn.analyze-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d4af37, #b8860b);
-  color: #000;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-light));
+  color: var(--theme-background);
+  box-shadow: 0 4px 15px var(--theme-border-hover);
 }
 
 .function-btn .btn-icon {
@@ -599,11 +600,11 @@ function showPalaceInfo(palaceName) {
 
 .result-header h3 {
   margin: 0 0 15px 0;
-  color: #d4af37;
+  color: var(--theme-primary);
 }
 
 .result-content {
-  color: #fff;
+  color: var(--theme-text);
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -692,21 +693,21 @@ function showPalaceInfo(palaceName) {
 
 .cosmic-header::before {
   top: 0;
-  background: linear-gradient(to right, transparent, #85754e 20%, #d4af37 50%, #85754e 80%, transparent);
+  background: linear-gradient(to right, transparent, var(--theme-text-secondary) 20%, var(--theme-primary) 50%, var(--theme-text-secondary) 80%, transparent);
 }
 
 .cosmic-header::after {
   bottom: 0;
-  background: linear-gradient(to right, transparent, #85754e 20%, #d4af37 50%, #85754e 80%, transparent);
+  background: linear-gradient(to right, transparent, var(--theme-text-secondary) 20%, var(--theme-primary) 50%, var(--theme-text-secondary) 80%, transparent);
 }
 
 .dao-title {
   font-size: 32px;
   font-weight: normal;
   letter-spacing: 12px; /* Increased spacing */
-  color: #d4af37;
+  color: var(--theme-primary);
   margin: 0;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+  text-shadow: 0 0 10px var(--theme-glow);
   position: relative;
   display: inline-block;
   animation: titleGlow 3s infinite alternate ease-in-out;
@@ -715,7 +716,7 @@ function showPalaceInfo(palaceName) {
 .dao-subtitle {
   font-size: 15px;
   margin-top: 12px;
-  color: #a38a36; /* Softer gold */
+  color: var(--theme-text-secondary);
   letter-spacing: 4px;
   font-style: italic;
 }
@@ -724,11 +725,12 @@ function showPalaceInfo(palaceName) {
 .input-section-compact {
   margin-bottom: 12px;
   padding: 8px;
-  background-color: rgba(10, 10, 10, 0.8);
-  border: 1px solid #85754e;
+  background-color: var(--theme-background-mute);
+  border: 1px solid var(--theme-border);
   border-radius: 2px;
   animation: fadeInUp 1s ease-out forwards;
   animation-delay: 0.2s;
+  transition: all 0.3s ease;
 }
 
 .question-input-row {
@@ -740,31 +742,31 @@ function showPalaceInfo(palaceName) {
 
 
 .dao-picker {
-  border: 1px solid #85754e !important;
+  border: 1px solid var(--theme-border) !important;
   border-radius: 2px;
-  background-color: rgba(10, 10, 10, 0.9) !important;
-  color: #d4af37 !important;
+  background-color: var(--theme-background-mute) !important;
+  color: var(--theme-primary) !important;
   padding: 12px 15px;
   margin: 5px 0;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 3px var(--theme-shadow);
   transition: all 0.3s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .dao-picker:active {
-  border-color: rgba(243, 215, 126, 0.7) !important;
-  box-shadow: 0 0 12px rgba(243, 215, 126, 0.4);
+  border-color: var(--theme-border-hover) !important;
+  box-shadow: 0 0 12px var(--theme-glow);
 }
 
 .dao-picker input {
-  color: #f6e27a !important;
+  color: var(--theme-primary-light) !important;
   font-family: "FangSong", "STKaiti", serif !important;
 }
 
 .dao-dropdown {
   font-family: "FangSong", "STKaiti", serif !important;
-  border: 1px solid rgba(243, 215, 126, 0.5) !important;
-  background-color: rgba(15, 15, 15, 0.95) !important;
+  border: 1px solid var(--theme-border-hover) !important;
+  background-color: var(--theme-background-soft) !important;
 }
 
 /* More dynamic and animated button */
@@ -773,14 +775,14 @@ function showPalaceInfo(palaceName) {
   min-width: 150px;
   padding: 14px 30px;
   margin-top: 10px;
-  background: linear-gradient(45deg, #85754e 0%, #d4af37 50%, #85754e 100%);
+  background: linear-gradient(45deg, var(--theme-text-secondary) 0%, var(--theme-primary) 50%, var(--theme-text-secondary) 100%);
   background-size: 200% 200%;
-  color: #000;
+  color: var(--theme-background);
   border: none;
   font-size: 18px;
   border-radius: 2px;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 15px var(--theme-shadow);
   transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
@@ -918,8 +920,9 @@ function showPalaceInfo(palaceName) {
   width: 100%;
   animation: fadeInUp 1s ease-out forwards;
   animation-delay: 0.6s;
-  background: rgba(0,0,0,0.5);
+  background: var(--theme-background-mute);
   border-radius: 4px;
+  transition: background-color 0.5s ease;
 }
 
 .bagua-background {
@@ -930,7 +933,7 @@ function showPalaceInfo(palaceName) {
   width: 100%;
   height: 100%;
   transform: translate(-50%, -50%);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="%23f6e27a" stroke-width="0.5" opacity="0.1"/><circle cx="50" cy="50" r="40" fill="none" stroke="%23f6e27a" stroke-width="0.5" opacity="0.1"/><circle cx="50" cy="50" r="32" fill="none" stroke="%23f6e27a" stroke-width="0.5" opacity="0.1"/></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="%238b6914" stroke-width="0.5" opacity="0.1"/><circle cx="50" cy="50" r="40" fill="none" stroke="%238b6914" stroke-width="0.5" opacity="0.1"/><circle cx="50" cy="50" r="32" fill="none" stroke="%238b6914" stroke-width="0.5" opacity="0.1"/></svg>');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
@@ -947,9 +950,10 @@ function showPalaceInfo(palaceName) {
   left: -4px;
   right: -4px;
   bottom: -4px;
-  border: 1px solid #85754e;
+  border: 1px solid var(--theme-text-secondary);
   pointer-events: none;
   z-index: 0;
+  transition: border-color 0.5s ease;
 }
 
 /* Inner gold border */
@@ -960,9 +964,10 @@ function showPalaceInfo(palaceName) {
   left: -8px;
   right: -8px;
   bottom: -8px;
-  border: 1px solid #d4af37;
+  border: 1px solid var(--theme-primary);
   pointer-events: none;
   z-index: 0;
+  transition: border-color 0.5s ease;
 }
 
 /* Refined table with premium styling */
@@ -985,13 +990,13 @@ function showPalaceInfo(palaceName) {
 /* Elegant cells */
 .col {
   width: 33.33%;
-  height: 100px;
-  border: 1px solid #85754e !important; /* Softer gold border */
+  height: 130px;
+  border: 1px solid var(--theme-text-secondary) !important;
   position: relative;
-  background-color: rgba(10, 10, 10, 0.9);
+  background-color: var(--theme-background-soft);
   vertical-align: top;
-  padding: 20px 6px 6px 6px;
-  transition: all 0.2s ease-out;
+  padding: 24px 10px 10px 10px;
+  transition: all 0.3s ease-out;
   transform: none !important;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1003,35 +1008,37 @@ function showPalaceInfo(palaceName) {
   left: 2px;
   right: 2px;
   bottom: 2px;
-  border: 1px solid rgba(133, 117, 78, 0.3); /* Inner subtle border */
+  border: 1px solid var(--theme-border);
   pointer-events: none;
+  transition: border-color 0.3s ease;
 }
 
 .col.tapped {
-  background-color: rgba(30, 25, 15, 0.8) !important;
-  border-color: #d4af37 !important;
-  box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.2);
+  background-color: var(--theme-background-mute) !important;
+  border-color: var(--theme-primary) !important;
+  box-shadow: inset 0 0 20px var(--theme-glow);
 }
 
 /* Center cell special styling */
 .center {
-  background-color: rgba(15, 12, 5, 0.9);
-  border-color: #d4af37 !important;
+  background-color: var(--theme-background-mute);
+  border-color: var(--theme-primary) !important;
 }
 
 /* Refined palace names */
 .palace::before {
   content: attr(data-name);
   position: absolute;
-  top: 5px;
+  top: 6px;
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 14px;
-  color: #d4af37;
+  font-size: 16px;
+  color: var(--theme-primary);
   opacity: 1;
   font-weight: bold;
   letter-spacing: 1px;
+  transition: color 0.3s ease;
 }
 
 /* Enhanced color scheme for elements */
@@ -1049,28 +1056,32 @@ function showPalaceInfo(palaceName) {
 }
 
 /* Add elegant corner embellishments to each cell */
-.col::before {
+.col .corner-decoration::before {
   content: "";
   position: absolute;
   width: 8px;
   height: 8px;
-  border-top: 1px solid #d4af37;
-  border-left: 1px solid #d4af37;
+  border-top: 1px solid var(--theme-primary);
+  border-left: 1px solid var(--theme-primary);
   top: 5px;
   left: 5px;
   opacity: 0.7;
+  transition: border-color 0.3s ease;
+  pointer-events: none;
 }
 
-.col::after {
+.col .corner-decoration::after {
   content: "";
   position: absolute;
   width: 8px;
   height: 8px;
-  border-bottom: 1px solid #d4af37;
-  border-right: 1px solid #d4af37;
+  border-bottom: 1px solid var(--theme-primary);
+  border-right: 1px solid var(--theme-primary);
   bottom: 5px;
   right: 5px;
   opacity: 0.7;
+  transition: border-color 0.3s ease;
+  pointer-events: none;
 }
 
 /* 底部空间样式 */

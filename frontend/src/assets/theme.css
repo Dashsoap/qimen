@@ -1,0 +1,283 @@
+/* 主题CSS变量定义 */
+:root {
+  /* 默认暗色主题变量 */
+  --theme-primary: #d4af37;
+  --theme-primary-light: #ffd700;
+  --theme-background: #000000;
+  --theme-background-soft: #0a0a0a;
+  --theme-background-mute: #1a1a1a;
+  --theme-surface: #2d2d2d;
+  --theme-text: #ffffff;
+  --theme-text-secondary: rgba(255, 255, 255, 0.8);
+  --theme-text-muted: rgba(255, 255, 255, 0.6);
+  --theme-border: rgba(212, 175, 55, 0.2);
+  --theme-border-hover: rgba(212, 175, 55, 0.4);
+  --theme-shadow: rgba(0, 0, 0, 0.8);
+  --theme-glow: rgba(212, 175, 55, 0.3);
+}
+
+/* 明确的暗色主题 */
+.theme-dark {
+  --theme-primary: #d4af37;
+  --theme-primary-light: #ffd700;
+  --theme-background: #000000;
+  --theme-background-soft: #0a0a0a;
+  --theme-background-mute: #1a1a1a;
+  --theme-surface: #2d2d2d;
+  --theme-text: #ffffff;
+  --theme-text-secondary: rgba(255, 255, 255, 0.8);
+  --theme-text-muted: rgba(255, 255, 255, 0.6);
+  --theme-border: rgba(212, 175, 55, 0.2);
+  --theme-border-hover: rgba(212, 175, 55, 0.4);
+  --theme-shadow: rgba(0, 0, 0, 0.8);
+  --theme-glow: rgba(212, 175, 55, 0.3);
+}
+
+/* 明确的亮色主题 - 优化后的颜色配置 */
+.theme-light {
+  --theme-primary: #8b6914;
+  --theme-primary-light: #b8860b;
+  --theme-background: #fdfcf8;
+  --theme-background-soft: #f5f2eb;
+  --theme-background-mute: #ede8db;
+  --theme-surface: #ffffff;
+  --theme-text: #2c2418;
+  --theme-text-secondary: #5a4f3a;
+  --theme-text-muted: #8b7355;
+  --theme-border: rgba(139, 105, 20, 0.3);
+  --theme-border-hover: rgba(139, 105, 20, 0.5);
+  --theme-shadow: rgba(139, 105, 20, 0.15);
+  --theme-glow: rgba(139, 105, 20, 0.25);
+}
+
+/* 平滑过渡效果 */
+* {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* 针对特定元素的过渡优化 */
+.theme-transition {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 防止过渡闪烁 */
+.theme-no-transition * {
+  transition: none !important;
+}
+
+/* 自定义滚动条主题适配 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-background-mute);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--theme-primary), var(--theme-primary-light));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--theme-primary-light), var(--theme-primary));
+}
+
+/* 选择文本的颜色 */
+::selection {
+  background: var(--theme-glow);
+  color: var(--theme-background);
+}
+
+::-moz-selection {
+  background: var(--theme-glow);
+  color: var(--theme-background);
+}
+
+/* 日间模式特殊优化 */
+.theme-light .question-input-field {
+  background: var(--theme-surface) !important;
+  border: 2px solid var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  box-shadow: 0 2px 8px var(--theme-shadow) !important;
+}
+
+.theme-light .question-input-field:focus {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 3px var(--theme-glow), 0 2px 8px var(--theme-shadow) !important;
+}
+
+.theme-light .question-input-field::placeholder {
+  color: var(--theme-text-muted) !important;
+}
+
+.theme-light .recommendation-toggle {
+  background: linear-gradient(135deg, var(--theme-surface), var(--theme-background-soft)) !important;
+  border: 2px solid var(--theme-border) !important;
+  color: var(--theme-primary) !important;
+  box-shadow: 0 2px 8px var(--theme-shadow) !important;
+}
+
+.theme-light .recommendation-toggle:hover {
+  background: linear-gradient(135deg, var(--theme-background-soft), var(--theme-background-mute)) !important;
+  border-color: var(--theme-border-hover) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px var(--theme-shadow) !important;
+}
+
+.theme-light .recommendation-toggle.active {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-light)) !important;
+  color: var(--theme-background) !important;
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 4px 15px var(--theme-glow) !important;
+}
+
+.theme-light .analyze-btn {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-light)) !important;
+  color: var(--theme-background) !important;
+  border: 2px solid var(--theme-primary) !important;
+  box-shadow: 0 4px 15px var(--theme-glow) !important;
+  font-weight: 700 !important;
+}
+
+.theme-light .analyze-btn:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px var(--theme-glow) !important;
+  background: linear-gradient(135deg, var(--theme-primary-light), var(--theme-primary)) !important;
+}
+
+.theme-light .function-btn {
+  background: linear-gradient(135deg, var(--theme-surface), var(--theme-background-soft)) !important;
+  border: 2px solid var(--theme-border) !important;
+  color: var(--theme-primary) !important;
+  box-shadow: 0 2px 8px var(--theme-shadow) !important;
+}
+
+.theme-light .function-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--theme-background-soft), var(--theme-background-mute)) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary-light) !important;
+  box-shadow: 0 6px 16px var(--theme-glow) !important;
+}
+
+/* 奇门遁甲盘在日间模式的优化 */
+.theme-light .bagua-wrapper {
+  background: var(--theme-surface) !important;
+  border: 2px solid var(--theme-border) !important;
+  box-shadow: 0 4px 20px var(--theme-shadow) !important;
+}
+
+.theme-light .bagua-wrapper::before {
+  border-color: var(--theme-border) !important;
+}
+
+.theme-light .bagua-wrapper::after {
+  border-color: var(--theme-border-hover) !important;
+}
+
+/* 日间模式下的奇门遁甲文字颜色增强 */
+.theme-light :deep(.tian-gan) { 
+  color: #2563eb !important; /* 更深的蓝色 */
+  font-weight: 600 !important;
+}
+
+.theme-light :deep(.di-zhi) { 
+  color: #059669 !important; /* 更深的绿色 */
+  font-weight: 600 !important;
+}
+
+.theme-light :deep(.shen-sha) { 
+  color: #dc2626 !important; /* 更深的红色 */
+  font-weight: 600 !important;
+}
+
+.theme-light :deep(.gong-name) { 
+  color: var(--theme-primary) !important;
+  font-weight: bold !important;
+}
+
+.theme-light :deep(.star) { 
+  color: #ea580c !important; /* 更深的橙色 */
+  font-weight: 600 !important;
+}
+
+.theme-light :deep(.men) { 
+  color: #7c3aed !important; /* 更深的紫色 */
+  font-weight: 600 !important;
+}
+
+/* 日间模式结果区域优化 */
+.theme-light .result-section {
+  background: var(--theme-surface) !important;
+  border: 2px solid var(--theme-border) !important;
+  box-shadow: 0 4px 20px var(--theme-shadow) !important;
+}
+
+.theme-light .question-display {
+  background: var(--theme-background-soft) !important;
+  border: 1px solid var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-light .data-row {
+  background: var(--theme-background-soft) !important;
+  border: 1px solid var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-light .data-row:hover {
+  background: var(--theme-background-mute) !important;
+  border-color: var(--theme-border-hover) !important;
+}
+
+.theme-light .data-label {
+  color: var(--theme-text-secondary) !important;
+}
+
+.theme-light .data-value {
+  color: var(--theme-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Ant Design组件主题覆盖 */
+.theme-light .ant-input {
+  background-color: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+.theme-light .ant-input:focus {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 2px var(--theme-glow) !important;
+}
+
+.theme-light .ant-btn-primary {
+  background-color: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+.theme-light .ant-btn-primary:hover {
+  background-color: var(--theme-primary-light) !important;
+  border-color: var(--theme-primary-light) !important;
+}
+
+/* 媒体查询：响应系统深色模式偏好 */
+@media (prefers-color-scheme: light) {
+  :root:not(.theme-dark) {
+    --theme-primary: #8b6914;
+    --theme-primary-light: #b8860b;
+    --theme-background: #fdfcf8;
+    --theme-background-soft: #f5f2eb;
+    --theme-background-mute: #ede8db;
+    --theme-surface: #ffffff;
+    --theme-text: #2c2418;
+    --theme-text-secondary: #5a4f3a;
+    --theme-text-muted: #8b7355;
+    --theme-border: rgba(139, 105, 20, 0.3);
+    --theme-border-hover: rgba(139, 105, 20, 0.5);
+    --theme-shadow: rgba(139, 105, 20, 0.15);
+    --theme-glow: rgba(139, 105, 20, 0.25);
+  }
+} 

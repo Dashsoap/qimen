@@ -2,8 +2,16 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { onMounted, onUnmounted } from 'vue'
 import performanceManager from './utils/performance.js'
+import { useThemeStore } from './stores/theme'
+import ThemeToggle from './components/ThemeToggle.vue'
+
+// 主题管理
+const themeStore = useThemeStore()
 
 onMounted(() => {
+  // 初始化主题
+  themeStore.initTheme()
+  
   // 性能管理器会自动处理页面可见性和内存管理
   performanceManager.addObserver((event, data) => {
     // 可以在这里处理性能事件
@@ -18,6 +26,11 @@ onUnmounted(() => {
 
 <template>
   <div class="app-container">
+    <!-- 主题切换按钮 -->
+    <div class="theme-toggle-fixed">
+      <ThemeToggle />
+    </div>
+    
     <!-- 主内容区域 -->
     <main class="main-content">
       <RouterView />
@@ -97,8 +110,16 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(180deg, #000000 0%, #0a0a0a 50%, #000000 100%);
+  background: linear-gradient(180deg, var(--theme-background) 0%, var(--theme-background-soft) 50%, var(--theme-background) 100%);
   position: relative;
+  transition: background 0.5s ease;
+}
+
+.theme-toggle-fixed {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1001;
 }
 
 .app-container::before {
@@ -109,11 +130,12 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 20% 20%, var(--theme-glow) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(139, 69, 19, 0.02) 0%, transparent 50%),
     radial-gradient(circle at 50% 50%, rgba(75, 0, 130, 0.01) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
+  transition: background 0.5s ease;
 }
 
 .main-content {
@@ -130,23 +152,24 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   background: linear-gradient(180deg, 
-    rgba(0, 0, 0, 0.98) 0%, 
-    rgba(10, 10, 10, 0.98) 50%, 
-    rgba(0, 0, 0, 0.98) 100%
+    var(--theme-background-mute) 0%, 
+    var(--theme-background-soft) 50%, 
+    var(--theme-background-mute) 100%
   );
   backdrop-filter: blur(20px) saturate(180%);
-  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  border-top: 1px solid var(--theme-border);
   display: flex;
   justify-content: space-around;
   align-items: center;
   padding: 12px 8px 12px 8px;
   z-index: 1000;
   box-shadow: 
-    0 -8px 32px rgba(0, 0, 0, 0.8),
-    0 -1px 0 rgba(212, 175, 55, 0.1),
-    inset 0 1px 0 rgba(212, 175, 55, 0.1);
+    0 -8px 32px var(--theme-shadow),
+    0 -1px 0 var(--theme-border),
+    inset 0 1px 0 var(--theme-border);
   position: relative;
   overflow: hidden;
+  transition: all 0.5s ease;
 }
 
 .nav-bg-effect {
@@ -188,7 +211,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 8px 12px;
   text-decoration: none;
-  color: rgba(212, 175, 55, 0.6);
+  color: var(--theme-text-muted);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 16px;
   min-width: 64px;
@@ -242,13 +265,13 @@ onUnmounted(() => {
 
 /* 悬停效果 */
 .nav-item:hover {
-  color: rgba(212, 175, 55, 0.9);
+  color: var(--theme-primary);
   transform: translateY(-2px);
 }
 
 .nav-item:hover .nav-icon {
   transform: scale(1.2) rotate(5deg);
-  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
+  filter: drop-shadow(0 0 8px var(--theme-glow));
 }
 
 .nav-item:hover .nav-glow {
@@ -259,18 +282,18 @@ onUnmounted(() => {
 
 /* 激活状态 */
 .nav-item.active {
-  color: #d4af37;
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: var(--theme-primary);
+  background: var(--theme-glow);
+  border: 1px solid var(--theme-border);
   box-shadow: 
-    0 4px 16px rgba(212, 175, 55, 0.2),
-    inset 0 1px 0 rgba(212, 175, 55, 0.2);
+    0 4px 16px var(--theme-glow),
+    inset 0 1px 0 var(--theme-border);
 }
 
 .nav-item.active .nav-icon {
   transform: scale(1.15);
-  color: #ffd700;
-  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
+  color: var(--theme-primary-light);
+  filter: drop-shadow(0 0 12px var(--theme-glow));
 }
 
 .nav-item.active .nav-glow {
@@ -280,8 +303,8 @@ onUnmounted(() => {
 }
 
 .nav-item.active .nav-text {
-  color: #ffd700;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  color: var(--theme-primary-light);
+  text-shadow: 0 0 8px var(--theme-glow);
 }
 
 /* 奇门页面特殊效果 */
@@ -354,6 +377,19 @@ onUnmounted(() => {
   .nav-text {
     font-size: 10px;
   }
+  
+  .theme-toggle-fixed {
+    top: 15px;
+    right: 15px;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 360px) {
+  .theme-toggle-fixed {
+    top: 10px;
+    right: 10px;
+  }
 }
 
 /* 平板横屏优化 */
@@ -378,14 +414,16 @@ body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
-  background: #000000;
-  color: #d4af37;
+  background: var(--theme-background);
+  color: var(--theme-primary);
   overflow-x: hidden;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 #app {
   min-height: 100vh;
-  background: #000000;
+  background: var(--theme-background);
+  transition: background-color 0.5s ease;
 }
 
 /* 移除默认样式冲突 */

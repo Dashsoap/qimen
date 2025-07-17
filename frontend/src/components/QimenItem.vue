@@ -1,34 +1,34 @@
 <template>
     <div class="wrapper">
         <div class="wrapper-item">
-            <span class="clickable-element" v-if="viewData.暗干" @click.stop="showElementInfo('天干', viewData.暗干)">{{ viewData.暗干 }}</span>
-            <span class="clickable-element" v-if="viewData.八神" @click.stop="showElementInfo('八神', viewData.八神)">{{ viewData.八神 }}</span>
+            <span class="clickable-element tiangan-name" v-if="viewData.暗干" @click.stop="showElementInfo('天干', viewData.暗干)">{{ viewData.暗干 }}</span>
+            <span class="clickable-element divine-name" v-if="viewData.八神" @click.stop="showElementInfo('八神', viewData.八神)">{{ getFullDivineName(viewData.八神) }}</span>
             <span class="placeholder" v-else>空</span>
         </div>
         <div class="wrapper-item">
             <span class="placeholder">空 </span>
-            <span class="clickable-element" v-if="viewData.九星" 
+            <span class="clickable-element star-name" v-if="viewData.九星" 
                   :style="{ color: getFontColor('九星', viewData.九星) }" 
                   @click.stop="showElementInfo('九星', viewData.九星)">
-                {{ simplifyText(viewData.九星) }}
+                {{ getFullStarName(viewData.九星) }}
             </span>
             <span class="placeholder">空</span>
         </div>
         <div class="wrapper-item">
             <span class="placeholder">空</span>
             <span class="placeholder">空</span>
-            <span class="clickable-element" v-if="viewData.八门" 
+            <span class="clickable-element gate-name" v-if="viewData.八门" 
                   :style="{ color: getFontColor('八门', viewData.八门) }" 
                   @click.stop="showElementInfo('八门', viewData.八门)">
                 {{ simplifyText(viewData.八门) }}
             </span>
             <span class="placeholder" v-if="!viewData.天盘1">空</span>
-            <span class="clickable-element" v-if="viewData.天盘1" 
+            <span class="clickable-element tiangan-name" v-if="viewData.天盘1" 
                   :style="{ color: getFontColor('天干', viewData.天盘1) }" 
                   @click.stop="showElementInfo('天干', viewData.天盘1)">
                 {{ viewData.天盘1 }}
             </span>
-            <span class="clickable-element" v-if="viewData.天盘" 
+            <span class="clickable-element tiangan-name" v-if="viewData.天盘" 
                   :style="{ color: getFontColor('天干', viewData.天盘) }" 
                   @click.stop="showElementInfo('天干', viewData.天盘)">
                 {{ viewData.天盘 }}
@@ -37,10 +37,11 @@
         <div class="wrapper-item">
             <span class="placeholder">符</span>
             <span v-if="getKongWang(viewData)" class="kong-indicator clickable-element"
+                  style="font-size: 18px !important; font-weight: 700;"
                   @click.stop="showElementInfo('旬空', '旬空')">
                 {{ getKongWang(viewData) }}
             </span>
-            <span class="clickable-element" v-if="viewData.地盘" 
+            <span class="clickable-element dizhi-name" v-if="viewData.地盘" 
                   :style="{ color: getFontColor('地支', viewData.地盘) }" 
                   @click.stop="showElementInfo('地支', viewData.地盘)">
                 {{ viewData.地盘 }}
@@ -159,6 +160,56 @@ function simplifyText(text) {
     return traditionalToSimplified[text] || text;
 }
 
+// 八神简称到全称的显示映射
+function getFullDivineName(shortName) {
+    const divineMappings = {
+        // 简体字映射
+        '符': '值符',
+        '蛇': '螣蛇', 
+        '阴': '太阴',
+        '合': '六合',
+        '虎': '白虎',
+        '武': '玄武',
+        '玄': '玄武',  // 处理数据源是"玄"的情况
+        '地': '九地',
+        '天': '九天',
+        
+        // 繁体字映射
+        '陰': '太阴',  // 繁体字"陰"映射到太阴
+        '螣': '螣蛇',  // 处理可能的繁体字
+        
+        // 全称映射（数据源直接是全称的情况）
+        '太阴': '太阴',
+        '六合': '六合',
+        '白虎': '白虎',
+        '玄武': '玄武',
+        '九地': '九地',
+        '九天': '九天',
+        '值符': '值符',
+        '螣蛇': '螣蛇'
+    };
+    
+    return divineMappings[shortName] || shortName;
+}
+
+// 九星简称到全称的显示映射
+function getFullStarName(shortName) {
+    const starMappings = {
+        '蓬': '天蓬',
+        '芮': '天芮',
+        '冲': '天冲',
+        '辅': '天辅',
+        '禽': '天禽',
+        '心': '天心',
+        '柱': '天柱',
+        '任': '天任',
+        '英': '天英'
+    };
+    // 如果是繁体字，先转简体
+    const simplified = simplifyText(shortName);
+    return starMappings[simplified] || shortName;
+}
+
 // 所有符号的五行属性对照表 (使用简体字)
 const wuxingMap = {
     八门: {
@@ -238,18 +289,6 @@ function getFontColor(type, value) {
 function showElementInfo(type, value) {
     if (!value) return;
     
-    // 八神简称到全称的映射
-    const divineMappings = {
-        '符': '值符',
-        '蛇': '螣蛇',
-        '阴': '太阴',
-        '合': '六合',
-        '虎': '白虎',
-        '武': '玄武',
-        '地': '九地',
-        '天': '九天'
-    };
-    
     // 准备用于查找解释的键和显示名称
     let elementName = value;
     let displayName = value;
@@ -265,10 +304,10 @@ function showElementInfo(type, value) {
             displayName = '八门·' + simplifyText(value) + '门';
             break;
         case '八神':
-            // 使用映射表将简称转为全称，用于查找解释
-            elementName = divineMappings[simplifyText(value)] || simplifyText(value);
-            // 但在显示时仍使用简称，方便用户识别
-            displayName = '八神·' + simplifyText(value);
+            // 直接使用 getFullDivineName 函数来获取正确的全称
+            elementName = getFullDivineName(value);
+            // 显示时也使用全称，保持一致
+            displayName = '八神·' + getFullDivineName(value);
             break;
         case '天干':
             displayName = '天干·' + value;
@@ -288,9 +327,6 @@ function showElementInfo(type, value) {
             break;
     }
     
-    // 调试信息，帮助排查问题
-    console.log(`查找解释: 类型=${type}, 值=${value}, 键=${elementName}, 显示=${displayName}`);
-    
     // 确保事件不冒泡到父元素
     event.stopPropagation();
     
@@ -305,17 +341,24 @@ function showElementInfo(type, value) {
     height: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
 }
 
 .wrapper-item {
     display: flex;
     justify-content: space-between;
+    flex-wrap: nowrap;
+    align-items: center;
+    min-height: 20px;
 }
 
 /** 占位 */
 .placeholder {
     visibility: hidden;
     margin: 0;
+    font-size: 16px;
+    min-width: 16px;
 }
 
 /* 马星位置样式 */
@@ -479,6 +522,13 @@ function showElementInfo(type, value) {
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    white-space: nowrap;
+    font-size: 16px;
+    min-width: fit-content;
+    display: inline-block;
+    line-height: 1.2;
+    text-align: center;
+    font-weight: 600;
 }
 
 .clickable-element:hover {
@@ -505,11 +555,62 @@ function showElementInfo(type, value) {
 .horse-indicator {
     cursor: pointer;
     transition: all 0.2s ease;
+    font-size: 20px;
+    font-weight: bold;
 }
 
 .horse-indicator:hover {
     transform: scale(1.2);
     text-shadow: 0 0 8px rgba(246, 226, 122, 0.7);
 }
+
+/* 八神显示样式优化 */
+.divine-name {
+    font-size: 15px !important;
+    letter-spacing: 1px;
+    min-width: 28px;
+    text-align: center;
+    word-break: keep-all;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+/* 九星显示样式优化 */
+.star-name {
+    font-size: 15px !important;
+    letter-spacing: 1px;
+    min-width: 28px;
+    text-align: center;
+    word-break: keep-all;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+/* 八门显示样式优化 */
+.gate-name {
+    font-size: 16px !important;
+    letter-spacing: 0.5px;
+    min-width: 20px;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* 天干显示样式优化 */
+.tiangan-name {
+    font-size: 18px !important;
+    font-weight: 700;
+    text-align: center;
+    min-width: 18px;
+}
+
+/* 地支显示样式优化 */
+.dizhi-name {
+    font-size: 18px !important;
+    font-weight: 700;
+    text-align: center;
+    min-width: 18px;
+}
+
+
 </style>
   
