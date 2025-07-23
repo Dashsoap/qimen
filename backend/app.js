@@ -125,6 +125,8 @@ class QimenServer {
         auth: {
           register: 'POST /api/auth/register',
           login: 'POST /api/auth/login',
+          sendSms: 'POST /api/auth/send-sms',
+          loginSms: 'POST /api/auth/login-sms',
           logout: 'POST /api/auth/logout',
           profile: 'GET /api/auth/profile'
         },
@@ -162,16 +164,22 @@ class QimenServer {
    */
   setupAuthRoutes() {
     const { authRateLimit, authMiddleware } = this.middlewares;
-    
+
     // 用户注册
     this.app.post('/api/auth/register', authRateLimit, this.register.bind(this));
-    
+
     // 用户登录
     this.app.post('/api/auth/login', authRateLimit, this.login.bind(this));
-    
+
+    // 发送短信验证码
+    this.app.post('/api/auth/send-sms', authRateLimit, this.sendSmsCode.bind(this));
+
+    // 短信验证码登录
+    this.app.post('/api/auth/login-sms', authRateLimit, this.loginWithSms.bind(this));
+
     // 用户登出
     this.app.post('/api/auth/logout', authMiddleware, this.logout.bind(this));
-    
+
     // 获取用户资料
     this.app.get('/api/auth/profile', authMiddleware, this.getProfile.bind(this));
   }
@@ -439,6 +447,204 @@ class QimenServer {
   }
 
   /**
+   * 发送短信验证码
+   */
+  async sendSmsCode(req, res) {
+    try {
+      const { phone } = req.body;
+
+      // 验证手机号格式
+      if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+        return res.status(400).json({
+          success: false,
+          error: '请输入正确的手机号'
+        });
+      }
+
+      // 生成6位验证码
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // 设置验证码过期时间（5分钟）
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+      // 存储验证码到数据库
+      await this.prisma.smsCode.upsert({
+        where: { phone },
+        update: {
+          code,
+          expiresAt,
+          attempts: 0
+        },
+        create: {
+          phone,
+          code,
+          expiresAt,
+          attempts: 0
+        }
+      });
+
+      // 这里应该调用短信服务发送验证码
+      // 为了演示，我们只是记录到控制台
+      console.log(`📱 发送验证码到 ${phone}: ${code}`);
+
+      res.json({
+        success: true,
+        message: '验证码发送成功',
+        // 开发环境下返回验证码，生产环境不应该返回
+        ...(process.env.NODE_ENV === 'development' && { code })
+      });
+
+    } catch (error) {
+      console.error('发送短信验证码错误:', error);
+      res.status(500).json({
+        success: false,
+        error: '验证码发送失败'
+      });
+    }
+  }
+
+  /**
+   * 短信验证码登录
+   */
+  async loginWithSms(req, res) {
+    try {
+      const { phone, code } = req.body;
+
+      // 验证手机号格式
+      if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+        return res.status(400).json({
+          success: false,
+          error: '请输入正确的手机号'
+        });
+      }
+
+      // 验证验证码格式
+      if (!code || !/^\d{6}$/.test(code)) {
+        return res.status(400).json({
+          success: false,
+          error: '请输入6位验证码'
+        });
+      }
+
+      // 查找验证码记录
+      const smsRecord = await this.prisma.smsCode.findUnique({
+        where: { phone }
+      });
+
+      if (!smsRecord) {
+        return res.status(400).json({
+          success: false,
+          error: '请先获取验证码'
+        });
+      }
+
+      // 检查验证码是否过期
+      if (new Date() > smsRecord.expiresAt) {
+        return res.status(400).json({
+          success: false,
+          error: '验证码已过期，请重新获取'
+        });
+      }
+
+      // 检查尝试次数
+      if (smsRecord.attempts >= 3) {
+        return res.status(400).json({
+          success: false,
+          error: '验证码错误次数过多，请重新获取'
+        });
+      }
+
+      // 验证验证码
+      if (smsRecord.code !== code) {
+        // 增加尝试次数
+        await this.prisma.smsCode.update({
+          where: { phone },
+          data: { attempts: smsRecord.attempts + 1 }
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: '验证码错误'
+        });
+      }
+
+      // 验证成功，删除验证码记录
+      await this.prisma.smsCode.delete({
+        where: { phone }
+      });
+
+      // 查找或创建用户
+      let user = await this.prisma.user.findUnique({
+        where: { phone }
+      });
+
+      if (!user) {
+        // 创建新用户
+        const username = `user_${phone.slice(-4)}_${Date.now().toString().slice(-4)}`;
+        user = await this.prisma.user.create({
+          data: {
+            username,
+            phone,
+            email: null,
+            password: '', // 手机号登录用户没有密码
+            points: {
+              create: {
+                balance: 1000,
+                totalEarned: 1000,
+                totalSpent: 0,
+                pointsRecords: {
+                  create: {
+                    amount: 1000,
+                    type: 'earned',
+                    description: '新用户注册奖励'
+                  }
+                }
+              }
+            }
+          },
+          include: {
+            points: {
+              include: {
+                pointsRecords: true
+              }
+            }
+          }
+        });
+      }
+
+      // 生成JWT令牌
+      const jwtConfig = this.config.getJWTConfig();
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          username: user.username,
+          phone: user.phone 
+        },
+        jwtConfig.secret,
+        { expiresIn: jwtConfig.expiresIn }
+      );
+
+      // 返回用户信息（不包含密码）
+      const { password: _, ...userWithoutPassword } = user;
+
+      res.json({
+        success: true,
+        message: user.createdAt.getTime() === user.updatedAt.getTime() ? 
+          '注册成功，获得1000积分奖励！' : '登录成功',
+        user: userWithoutPassword,
+        token
+      });
+
+    } catch (error) {
+      console.error('短信验证码登录错误:', error);
+      res.status(500).json({
+        success: false,
+        error: '登录失败'
+      });
+    }
+  }
+
+  /**
    * 用户登出
    */
   logout(req, res) {
@@ -663,7 +869,7 @@ class QimenServer {
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
 
-      // 检查今日是否已签到
+      // 检查今天是否已签到
       const todayCheckin = await this.prisma.pointsRecord.findFirst({
         where: {
           userPoints: {
@@ -687,31 +893,29 @@ class QimenServer {
         });
       }
 
+      // 计算连续签到天数和奖励
       const continuousStreak = await this.getCheckinStreak(req.user.id);
-      const newStreak = continuousStreak + 1;
-      const bonus = this.getCheckinBonus(newStreak);
+      const bonus = this.getCheckinBonus(continuousStreak + 1);
 
-      // 使用积分服务添加签到奖励
+      // 执行签到（获得积分）
       const result = await this.pointsService.earnPoints(
-        req.user.id, 
-        bonus, 
-        `每日签到奖励 (连续${newStreak}天)`
+        req.user.id,
+        bonus,
+        `每日签到奖励 - 连续${continuousStreak + 1}天`
       );
 
       res.json({
         success: true,
-        message: '签到成功',
+        message: '签到成功！',
         data: {
-          bonus: bonus,
-          newBalance: result.newBalance,
-          continuousStreak: newStreak,
-          checkinTime: new Date().toISOString(),
-          nextDayBonus: this.getCheckinBonus(newStreak + 1)
+          bonus,
+          continuousStreak: continuousStreak + 1,
+          newBalance: result.newBalance
         }
       });
 
     } catch (error) {
-      console.error('签到失败:', error);
+      console.error('签到错误:', error);
       res.status(500).json({
         success: false,
         error: '签到失败'
@@ -991,23 +1195,19 @@ class QimenServer {
 🌍 运行环境: ${serverConfig.nodeEnv}
 🔒 安全认证: JWT + bcrypt
 📊 数据库: Prisma ORM
-🤖 AI服务: SophNet DeepSeek-R1
-⚡ 性能优化: 缓存 + 事务 + 限流
 
-🚀 核心优化:
-   ✅ 统一架构设计
-   ✅ 数据库事务优化
-   ✅ 智能缓存系统  
-   ✅ 差异化限流策略
-   ✅ 多策略AI分析
-   ✅ 结构化错误处理
-   ✅ 配置管理优化
+🚀 核心功能:
+   ✅ 手机号短信登录
+   ✅ 用户注册登录
+   ✅ 积分系统
+   ✅ 签到功能
+   ✅ AI分析服务
 
-🔧 系统监控:
-   - 缓存命中率: 实时监控
-   - 数据库连接: 健康检查
-   - AI服务状态: 在线监控
-   - 用户请求: 实时日志
+🔧 短信验证码说明:
+   - 开发环境: 验证码显示在控制台
+   - 生产环境: 需要配置真实短信服务
+   - 验证码有效期: 5分钟
+   - 最大尝试次数: 3次
 
 🚀 准备就绪，开始您的奇门遁甲之旅！
 =======================================
@@ -1029,10 +1229,6 @@ class QimenServer {
     try {
       await this.prisma.$disconnect();
       console.log('✅ 数据库连接已关闭');
-      
-      // 清理缓存
-      this.pointsService.clearAllCache();
-      console.log('✅ 缓存已清理');
       
       console.log('👋 服务器已优雅关闭');
       process.exit(0);
@@ -1067,4 +1263,4 @@ server.start().catch(error => {
   process.exit(1);
 });
 
-export default server; 
+export default server;

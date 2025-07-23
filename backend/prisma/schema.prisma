@@ -88,4 +88,15 @@ model PointsRecord {
   userPoints   UserPoints @relation(fields: [userPointsId], references: [id], onDelete: Cascade)
   
   createdAt    DateTime @default(now())
-} 
+}
+
+model SmsCode {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  code      String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
