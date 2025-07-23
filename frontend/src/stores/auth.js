@@ -206,6 +206,154 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // 新增：发送短信验证码
+  const sendSmsCode = async (phone) => {
+    isLoading.value = true
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: `${API_BASE_URL}/api/auth/send-sms`,
+        data: { phone },
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        },
+        timeout: 10000,
+        transformRequest: [function (data) {
+          return JSON.stringify(data);
+        }]
+      })
+
+      const data = response.data
+      
+      if (data.success) {
+        return { success: true, message: data.message || '验证码发送成功' }
+      } else {
+        return { success: false, message: data.message || '验证码发送失败' }
+      }
+    } catch (error) {
+      console.error('Send SMS error:', error)
+      let errorMessage = '验证码发送失败，请重试'
+      
+      if (error.response) {
+        const errorData = error.response.data
+        errorMessage = errorData?.error || errorData?.message || `发送失败 (${error.response.status})`
+      } else if (error.request) {
+        errorMessage = '无法连接到服务器，请检查网络连接'
+      } else {
+        errorMessage = error.message || '请求配置错误'
+      }
+      
+      return { success: false, message: errorMessage }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 新增：短信验证码登录
+  const loginWithSms = async (credentials) => {
+    isLoading.value = true
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: `${API_BASE_URL}/api/auth/login-sms`,
+        data: {
+          phone: credentials.phone,
+          code: credentials.code
+        },
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        },
+        timeout: 10000,
+        transformRequest: [function (data) {
+          return JSON.stringify(data);
+        }]
+      })
+
+      const data = response.data
+      
+      if (data.success) {
+        token.value = data.token
+        user.value = data.user
+        localStorage.setItem('token', data.token)
+        setAuthHeader(data.token)
+        
+        return { success: true, message: data.message || '登录成功' }
+      } else {
+        return { success: false, message: data.message || '登录失败' }
+      }
+    } catch (error) {
+      console.error('SMS Login error:', error)
+      let errorMessage = '登录失败，请重试'
+      
+      if (error.response) {
+        const errorData = error.response.data
+        errorMessage = errorData?.error || errorData?.message || `登录失败 (${error.response.status})`
+      } else if (error.request) {
+        errorMessage = '无法连接到服务器，请检查网络连接'
+      } else {
+        errorMessage = error.message || '请求配置错误'
+      }
+      
+      return { success: false, message: errorMessage }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 新增：手机号注册
+  const registerWithSms = async (credentials) => {
+    isLoading.value = true
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: `${API_BASE_URL}/api/auth/register-sms`,
+        data: {
+          phone: credentials.phone,
+          code: credentials.code
+        },
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json',
+        },
+        timeout: 10000,
+        transformRequest: [function (data) {
+          return JSON.stringify(data);
+        }]
+      })
+
+      const data = response.data
+      
+      if (data.success) {
+        token.value = data.token
+        user.value = data.user
+        localStorage.setItem('token', data.token)
+        setAuthHeader(data.token)
+        
+        return { success: true, message: data.message || '注册成功，获得1000积分奖励！' }
+      } else {
+        return { success: false, message: data.message || '注册失败' }
+      }
+    } catch (error) {
+      console.error('SMS Register error:', error)
+      let errorMessage = '注册失败，请重试'
+      
+      if (error.response) {
+        const errorData = error.response.data
+        errorMessage = errorData?.error || errorData?.message || `注册失败 (${error.response.status})`
+      } else if (error.request) {
+        errorMessage = '无法连接到服务器，请检查网络连接'
+      } else {
+        errorMessage = error.message || '请求配置错误'
+      }
+      
+      return { success: false, message: errorMessage }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // 新增：积分交易
   const pointsTransaction = async (amount, type, description) => {
     if (!token.value) return { success: false, message: '请先登录' }
@@ -238,9 +386,12 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     login,
     register,
+    registerWithSms,
     logout,
     checkAuth,
     getPoints,
     pointsTransaction,
+    sendSmsCode,
+    loginWithSms,
   }
 }) 

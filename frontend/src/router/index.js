@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/auth'
 import HomeView from '../views/HomeView.vue'
 import QimenView from '../views/QimenView.vue'
 import LoginView from '../views/LoginView.vue'
+import RegisterView from '../views/RegisterView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import FavoritesView from '../views/FavoritesView.vue'
@@ -14,6 +15,12 @@ const router = createRouter({
       path: "/login",
       name: "login",
       component: LoginView,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: "/register",
+      name: "register",
+      component: RegisterView,
       meta: { requiresGuest: true }
     },
     {
