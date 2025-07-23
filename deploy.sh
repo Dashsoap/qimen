@@ -43,7 +43,7 @@ cd $LOCAL_FRONTEND_PATH
 # 创建生产环境配置
 echo "⚙️ 配置生产环境变量..."
 cat > .env.production << 'ENV_EOF'
-VITE_API_BASE_URL=http://101.201.148.8:3001
+VITE_API_BASE_URL=https://101.201.148.8
 VITE_APP_TITLE=鬼谷奇门遁甲
 VITE_APP_VERSION=2.0.0
 ENV_EOF
@@ -86,7 +86,7 @@ JWT_EXPIRES_IN=7d
 BCRYPT_ROUNDS=12
 
 # 服务器配置
-CORS_ORIGIN=http://101.201.148.8
+CORS_ORIGIN=https://101.201.148.8
 TRUST_PROXY=true
 
 # AI服务配置
@@ -115,15 +115,53 @@ cp -r $LOCAL_FRONTEND_PATH/dist/* $DEPLOY_DIR/frontend/
 # 创建nginx配置文件
 echo "🌐 创建nginx配置..."
 cat > $DEPLOY_DIR/nginx.conf << 'NGINX_EOF'
+# HTTP重定向到HTTPS
 server {
     listen 80;
     server_name 101.201.148.8;
     
-    # 添加安全头
+    # ACME challenge for Let's Encrypt
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+        allow all;
+    }
+    
+    # 重定向所有HTTP流量到HTTPS
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+# HTTPS主配置
+server {
+    listen 443 ssl http2;
+    server_name 101.201.148.8;
+    
+    # SSL证书配置
+    ssl_certificate /etc/nginx/ssl/101.201.148.8.crt;
+    ssl_certificate_key /etc/nginx/ssl/101.201.148.8.key;
+    
+    # 或者使用Let's Encrypt证书
+    # ssl_certificate /etc/letsencrypt/live/101.201.148.8/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/101.201.148.8/privkey.pem;
+    
+    # SSL优化配置
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+    
+    # HSTS (HTTP Strict Transport Security)
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    
+    # 强化的安全头
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://101.201.148.8; frame-ancestors 'self';" always;
     
     # 前端静态文件
     location / {
@@ -153,7 +191,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto https;
         proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 300s;
         proxy_connect_timeout 75s;
@@ -168,6 +206,7 @@ server {
         proxy_pass http://localhost:3001;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
         access_log off;
     }
     
@@ -219,7 +258,7 @@ case "$1" in
         
         # 检查后端健康状态
         for i in {1..10}; do
-            if curl -f http://localhost:3001/health > /dev/null 2>&1; then
+            if curl -f -k https://localhost/health > /dev/null 2>&1; then
                 echo "✅ 后端服务运行正常"
                 break
             else
@@ -229,7 +268,7 @@ case "$1" in
         done
         
         # 检查前端访问
-        if curl -f http://localhost > /dev/null 2>&1; then
+        if curl -f -k https://localhost > /dev/null 2>&1; then
             echo "✅ 前端服务运行正常"
         else
             echo "❌ 前端服务异常"
@@ -285,7 +324,7 @@ case "$1" in
             fi
             
             # 检查健康状态
-            if curl -f http://localhost:3001/health > /dev/null 2>&1; then
+            if curl -f -k https://localhost/health > /dev/null 2>&1; then
                 echo "✅ 健康检查: 通过"
             else
                 echo "❌ 健康检查: 失败"
@@ -312,9 +351,9 @@ case "$1" in
         
         echo ""
         echo "🌐 访问地址:"
-        echo "   前端: http://101.201.148.8"
-        echo "   后端API: http://101.201.148.8:3001"
-        echo "   健康检查: http://101.201.148.8/health"
+        echo "   前端: https://101.201.148.8"
+        echo "   后端API: https://101.201.148.8/api"
+        echo "   健康检查: https://101.201.148.8/health"
         echo ""
         echo "📝 日志文件:"
         echo "   后端日志: $LOG_FILE"
@@ -395,6 +434,109 @@ DB_EOF
 
 chmod +x $DEPLOY_DIR/init-database.sh
 
+# 创建SSL证书配置脚本
+echo "🔒 创建SSL证书配置脚本..."
+cat > $DEPLOY_DIR/setup-ssl.sh << 'SSL_EOF'
+#!/bin/bash
+
+echo "🔒 配置SSL证书..."
+
+# 创建SSL目录
+mkdir -p /etc/nginx/ssl
+
+# 选项1: 使用Let's Encrypt (推荐)
+setup_letsencrypt() {
+    echo "📋 使用Let's Encrypt获取免费SSL证书..."
+    
+    # 安装certbot
+    if ! command -v certbot &> /dev/null; then
+        echo "📦 安装certbot..."
+        apt update
+        apt install -y certbot python3-certbot-nginx
+    fi
+    
+    # 暂时停止nginx
+    systemctl stop nginx
+    
+    # 获取证书
+    certbot certonly --standalone \
+        --non-interactive \
+        --agree-tos \
+        --email admin@101.201.148.8 \
+        -d 101.201.148.8
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Let's Encrypt证书获取成功"
+        
+        # 更新nginx配置使用Let's Encrypt证书
+        sed -i 's|ssl_certificate /etc/nginx/ssl/101.201.148.8.crt;|ssl_certificate /etc/letsencrypt/live/101.201.148.8/fullchain.pem;|g' /etc/nginx/sites-available/qimen
+        sed -i 's|ssl_certificate_key /etc/nginx/ssl/101.201.148.8.key;|ssl_certificate_key /etc/letsencrypt/live/101.201.148.8/privkey.pem;|g' /etc/nginx/sites-available/qimen
+        
+        # 设置自动续期
+        (crontab -l 2>/dev/null; echo "0 12 * * * /usr/bin/certbot renew --quiet && systemctl reload nginx") | crontab -
+        
+        echo "✅ SSL证书自动续期已配置"
+        return 0
+    else
+        echo "❌ Let's Encrypt证书获取失败，尝试生成自签名证书..."
+        return 1
+    fi
+}
+
+# 选项2: 生成自签名证书 (测试用)
+setup_selfsigned() {
+    echo "🔧 生成自签名SSL证书..."
+    
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout /etc/nginx/ssl/101.201.148.8.key \
+        -out /etc/nginx/ssl/101.201.148.8.crt \
+        -subj "/C=CN/ST=Beijing/L=Beijing/O=QimenAI/CN=101.201.148.8"
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ 自签名证书生成成功"
+        echo "⚠️  注意: 浏览器会显示证书不安全警告，这是正常的"
+        return 0
+    else
+        echo "❌ 自签名证书生成失败"
+        return 1
+    fi
+}
+
+# 主逻辑
+echo "🚀 开始SSL证书配置..."
+echo "1. 尝试使用Let's Encrypt获取免费证书"
+echo "2. 如果失败，生成自签名证书"
+echo ""
+
+# 首先尝试Let's Encrypt
+if setup_letsencrypt; then
+    echo "🎉 SSL证书配置完成 (Let's Encrypt)"
+else
+    echo "⚠️  Let's Encrypt失败，使用自签名证书..."
+    if setup_selfsigned; then
+        echo "🎉 SSL证书配置完成 (自签名)"
+    else
+        echo "❌ SSL证书配置失败"
+        exit 1
+    fi
+fi
+
+# 测试nginx配置
+echo "🧪 测试nginx配置..."
+nginx -t
+
+if [ $? -eq 0 ]; then
+    echo "✅ nginx配置测试通过"
+else
+    echo "❌ nginx配置测试失败"
+    exit 1
+fi
+
+echo "🔒 SSL证书配置完成！"
+SSL_EOF
+
+chmod +x $DEPLOY_DIR/setup-ssl.sh
+
 # 创建压缩包
 echo "📦 创建部署包..."
 tar -czf ${DEPLOY_DIR}.tar.gz $DEPLOY_DIR
@@ -424,6 +566,10 @@ ssh ${SERVER_USER}@${SERVER_IP} << 'EOF'
         echo "📦 安装Node.js..."
         curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
         apt install -y nodejs
+    fi
+    if ! command -v openssl &> /dev/null; then
+        echo "📦 安装OpenSSL..."
+        apt install -y openssl
     fi
 
     # 备份现有目录
@@ -471,6 +617,11 @@ ssh ${SERVER_USER}@${SERVER_IP} << 'EOF'
     cp /tmp/deploy-*/manage-services.sh /home/
     chmod +x /home/manage-services.sh
     
+    # 配置SSL证书
+    echo "🔒 配置SSL证书..."
+    chmod +x /tmp/deploy-*/setup-ssl.sh
+    /tmp/deploy-*/setup-ssl.sh
+    
     # 设置文件权限
     chown -R www-data:www-data /home/qimen-frontend
     chown -R root:root /home/qimen-backend
@@ -501,7 +652,7 @@ rm -rf $DEPLOY_DIR
 rm -f ${DEPLOY_DIR}.tar.gz
 
 echo ""
-echo "🎉 前后端一体化部署完成！"
+echo "🎉 前后端一体化HTTPS部署完成！"
 echo "========================================"
 echo "🏗️ 架构特点:"
 echo "   ✅ 使用优化后的app.js入口"
@@ -509,11 +660,12 @@ echo "   ✅ 模块化服务架构"
 echo "   ✅ 统一配置管理"
 echo "   ✅ 完整的错误处理"
 echo "   ✅ 性能优化和缓存"
+echo "   🔒 HTTPS/SSL加密传输"
 echo ""
 echo "🌐 访问地址:"
-echo "   📱 前端应用: http://101.201.148.8"
-echo "   🤖 后端API: http://101.201.148.8:3001"
-echo "   💓 健康检查: http://101.201.148.8/health"
+echo "   📱 前端应用: https://101.201.148.8"
+echo "   🤖 后端API: https://101.201.148.8/api"
+echo "   💓 健康检查: https://101.201.148.8/health"
 echo ""
 echo "🔧 服务管理:"
 echo "   启动: ssh ${SERVER_USER}@${SERVER_IP} '/home/manage-services.sh start'"
@@ -534,4 +686,8 @@ echo "   ✅ 数据库自动初始化"
 echo "   ✅ 完整的健康检查"
 echo "   ✅ 安全头和限流保护"
 echo "   ✅ 智能缓存策略"
-echo "   ✅ 详细的服务监控" 
+echo "   ✅ 详细的服务监控"
+echo "   🔒 HTTPS/SSL加密传输"
+echo "   🔒 Let's Encrypt自动证书"
+echo "   🔒 HTTP自动重定向HTTPS"
+echo "   🔒 强化的安全配置" 
