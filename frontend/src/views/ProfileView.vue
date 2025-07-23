@@ -341,15 +341,19 @@ const aboutApp = () => {
 }
 
 onMounted(async () => {
-  if (isAuthenticated.value && !user.value) {
-    await authStore.checkAuth()
-  }
-  
-  if (isAuthenticated.value) {
-    await Promise.all([
-      refreshPoints(),
-      refreshCheckinStatus()
-    ])
+  try {
+    if (isAuthenticated.value && !user.value) {
+      await authStore.checkAuth()
+    }
+    
+    if (isAuthenticated.value) {
+      await Promise.all([
+        refreshPoints(),
+        refreshCheckinStatus()
+      ])
+    }
+  } catch (error) {
+    console.error('Profile initialization error:', error)
   }
 })
 </script>
@@ -481,21 +485,8 @@ onMounted(async () => {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.user-avatar::after, .guest-avatar::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  border-radius: 50%;
-  border: 1px solid rgba(212, 175, 55, 0.5);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.7; }
+.user-avatar, .guest-avatar {
+  position: relative;
 }
 
 .user-name, .guest-name {

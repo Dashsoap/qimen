@@ -1,61 +1,43 @@
 // 环境检测
 const isProduction = import.meta.env.PROD;
-const isMobile = window.location.protocol === 'file:' || 
-                 window.location.protocol === 'capacitor:' || 
-                 window.location.protocol === 'ionic:';
+const isDevelopment = import.meta.env.DEV;
 
-// API基础URL配置 - 移动端优先服务器
+// API基础URL配置 - 开发环境优先本地服务器
 const getApiBaseUrl = () => {
-  // 增强移动端检测
-  const isMobile = 
-    // 协议检测
-    window.location.protocol === 'file:' || 
-    window.location.protocol === 'capacitor:' || 
-    window.location.protocol === 'ionic:' ||
-    // UserAgent检测
-    /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    // Cordova/PhoneGap检测
-    (typeof window.cordova !== 'undefined') ||
-    // 触摸屏设备检测
-    ('ontouchstart' in window) && (window.screen.width <= 1024) ||
-    // 移动端浏览器检测
-    /Mobile|Tablet/i.test(navigator.userAgent);
-  
-  // 🔧 移动端强制使用服务器
-  if (isMobile) {
-    console.log('📱 移动端环境检测，强制使用服务器地址:', {
-      protocol: window.location.protocol,
-      userAgent: navigator.userAgent,
-      hasCordova: typeof window.cordova !== 'undefined',
-      hasTouch: 'ontouchstart' in window,
-      screenWidth: window.screen.width
-    });
-    return 'http://101.201.148.8:3001';
-  }
-  
-  // Web端环境检测
   const currentHost = window.location.hostname;
   const currentPort = window.location.port;
   
-  // 本地开发环境检测（仅限Web端）
+  // 本地开发环境检测
   const isLocalDev = (currentHost === 'localhost' || currentHost === '127.0.0.1') && 
                      (currentPort === '5173' || currentPort === '3000');
   
   // 服务器Web环境
   const isServerWeb = currentHost === '101.201.148.8';
+  
+  // 移动端检测
+  const isMobile = 
+    window.location.protocol === 'file:' || 
+    window.location.protocol === 'capacitor:' || 
+    window.location.protocol === 'ionic:' ||
+    /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (typeof window.cordova !== 'undefined');
                    
-  if (isLocalDev) {
-    // 🔧 Web端本地开发 - 使用Vite代理，避免CORS
-    console.log('🔧 Web本地开发环境，使用Vite代理 (相对路径)');
-    return ''; // 空字符串表示使用相对路径，通过Vite代理
+  if (isLocalDev && !isMobile) {
+    // 🔧 Web端本地开发 - 直接使用本地后端
+    console.log('🔧 Web本地开发环境，使用本地后端服务器');
+    return 'http://localhost:3001';
   } else if (isServerWeb) {
     // 🔧 Web端服务器
     console.log('🔧 Web服务器环境，使用服务器地址');
     return 'http://101.201.148.8:3001';
-  } else {
-    // 🔧 所有其他情况默认使用服务器
-    console.log('🔧 未知环境，默认使用服务器地址');
+  } else if (isMobile) {
+    // 🔧 移动端使用服务器
+    console.log('📱 移动端环境，使用服务器地址');
     return 'http://101.201.148.8:3001';
+  } else {
+    // 🔧 默认使用本地开发服务器
+    console.log('🔧 默认环境，使用本地开发服务器');
+    return 'http://localhost:3001';
   }
 };
 
@@ -125,6 +107,10 @@ export const API_ENDPOINTS = {
   AUTH_LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   AUTH_PROFILE: `${API_BASE_URL}/api/auth/profile`,
   
+  // 🆕 SMS短信登录端点
+  AUTH_SEND_SMS: `${API_BASE_URL}/api/auth/send-sms`,
+  AUTH_LOGIN_SMS: `${API_BASE_URL}/api/auth/login-sms`,
+  
   // 🆕 新增：积分系统端点
   POINTS_GET: `${API_BASE_URL}/api/points`,
   POINTS_TRANSACTION: `${API_BASE_URL}/api/points/transaction`,
@@ -146,8 +132,8 @@ export const API_ENDPOINTS = {
 
 console.log('🌐 API配置 (升级版认证系统):', {
   baseUrl: API_BASE_URL,
-  isMobile: isMobile,
   isProduction: isProduction,
+  isDevelopment: isDevelopment,
   features: [
     '✅ JWT认证系统',
     '✅ 积分管理',

@@ -111,39 +111,41 @@
     <div class="bagua-wrapper">
       <div class="bagua-background"></div>
       <table class="qimen-table">
-        <tr class="row">
-          <td class="col palace" data-name="坎宫" @click="showPalaceInfo('坎宫')">
-            <QimenItem index="四" />
-          </td>
-          <td class="col palace" data-name="艮宫" @click="showPalaceInfo('艮宫')">
-            <QimenItem index="九" />
-          </td>
-          <td class="col palace" data-name="震宫" @click="showPalaceInfo('震宫')">
-            <QimenItem index="二" />
-          </td>
-        </tr>
-        <tr class="row">
-          <td class="col palace" data-name="坤宫" @click="showPalaceInfo('坤宫')">
-            <QimenItem index="三" />
-          </td>
-          <td class="col palace center" data-name="中宫" @click="showPalaceInfo('中宫')">
-            <QimenItem index="五" />
-          </td>
-          <td class="col palace" data-name="巽宫" @click="showPalaceInfo('巽宫')">
-            <QimenItem index="七" />
-          </td>
-        </tr>
-        <tr class="row">
-          <td class="col palace" data-name="兑宫" @click="showPalaceInfo('兑宫')">
-            <QimenItem index="八" />
-          </td>
-          <td class="col palace" data-name="乾宫" @click="showPalaceInfo('乾宫')">
-            <QimenItem index="一" />
-          </td>
-          <td class="col palace" data-name="离宫" @click="showPalaceInfo('离宫')">
-            <QimenItem index="六" />
-          </td>
-        </tr>
+        <tbody>
+          <tr class="row">
+            <td class="col palace" data-name="坎宫" @click="showPalaceInfo('坎宫')">
+              <QimenItem index="四" />
+            </td>
+            <td class="col palace" data-name="艮宫" @click="showPalaceInfo('艮宫')">
+              <QimenItem index="九" />
+            </td>
+            <td class="col palace" data-name="震宫" @click="showPalaceInfo('震宫')">
+              <QimenItem index="二" />
+            </td>
+          </tr>
+          <tr class="row">
+            <td class="col palace" data-name="坤宫" @click="showPalaceInfo('坤宫')">
+              <QimenItem index="三" />
+            </td>
+            <td class="col palace center" data-name="中宫" @click="showPalaceInfo('中宫')">
+              <QimenItem index="五" />
+            </td>
+            <td class="col palace" data-name="巽宫" @click="showPalaceInfo('巽宫')">
+              <QimenItem index="七" />
+            </td>
+          </tr>
+          <tr class="row">
+            <td class="col palace" data-name="兑宫" @click="showPalaceInfo('兑宫')">
+              <QimenItem index="八" />
+            </td>
+            <td class="col palace" data-name="乾宫" @click="showPalaceInfo('乾宫')">
+              <QimenItem index="一" />
+            </td>
+            <td class="col palace" data-name="离宫" @click="showPalaceInfo('离宫')">
+              <QimenItem index="六" />
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
 
