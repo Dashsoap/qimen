@@ -16,7 +16,7 @@
             <span class="symbol-text">奇</span>
           </div>
         </div>
-        <h1 class="app-title">鬼谷奇门</h1>
+        <h1 class="app-title">丁未奇门遁甲</h1>
         <p class="app-subtitle">{{ subtitle }}</p>
       </div>
 
@@ -36,7 +36,7 @@
         <div class="app-info">
           <span class="version">v1.0.0</span>
           <span class="divider-dot">•</span>
-          <span class="company">鬼谷奇门</span>
+          <span class="company">丁未奇门遁甲</span>
         </div>
       </div>
     </div>

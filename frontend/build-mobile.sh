@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 鬼谷奇门移动APP构建脚本
-echo "🚀 开始构建云鬼谷奇门移动APP..."
+# 丁未奇门遁甲移动APP构建脚本
+echo "🚀 开始构建云丁未奇门遁甲移动APP..."
 
 # 版本自动更新函数
 update_ios_version() {

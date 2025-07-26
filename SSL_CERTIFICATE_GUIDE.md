@@ -90,7 +90,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.qimen.app',
-  appName: '鬼谷奇门遁甲',
+  appName: '丁未奇门遁甲遁甲',
   webDir: 'dist',
   server: {
     url: 'https://101.201.148.8',

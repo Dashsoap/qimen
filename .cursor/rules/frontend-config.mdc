@@ -117,7 +117,7 @@ export default defineConfig({
 ```typescript
 const config: CapacitorConfig = {
   appId: 'com.guigu.qimen',
-  appName: '鬼谷奇门',
+  appName: '丁未奇门遁甲',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

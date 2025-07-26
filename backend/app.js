@@ -108,7 +108,7 @@ class QimenServer {
     const serverConfig = this.config.getServerConfig();
     
     res.json({
-      message: '🔮 鬼谷奇门遁甲 - 统一版后端服务',
+      message: '🔮 丁未奇门遁甲遁甲 - 统一版后端服务',
       version: '3.0.0',
       status: 'running',
       environment: serverConfig.nodeEnv,
@@ -1187,7 +1187,7 @@ class QimenServer {
       this.app.listen(serverConfig.port, () => {
         console.log(`
 🔮 =======================================
-   鬼谷奇门遁甲 - 统一版后端服务
+   丁未奇门遁甲遁甲 - 统一版后端服务
 🔮 =======================================
 
 ✅ 服务器启动成功
