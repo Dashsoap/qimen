@@ -342,15 +342,32 @@ const aboutApp = () => {
 
 onMounted(async () => {
   try {
-    if (isAuthenticated.value && !user.value) {
+    // 首先检查本地存储的登录状态
+    const token = localStorage.getItem('token')
+    const savedUser = localStorage.getItem('user')
+    
+    console.log('Profile页面初始化:', {
+      hasToken: !!token,
+      hasUser: !!savedUser,
+      storeAuthenticated: isAuthenticated.value,
+      storeUser: user.value
+    })
+    
+    // 如果有token但store中没有用户信息，重新验证
+    if (token && !user.value) {
+      console.log('检测到token但无用户信息，重新验证...')
       await authStore.checkAuth()
     }
     
+    // 如果已登录，获取用户数据
     if (isAuthenticated.value) {
+      console.log('用户已登录，获取积分和签到状态...')
       await Promise.all([
         refreshPoints(),
         refreshCheckinStatus()
       ])
+    } else {
+      console.log('用户未登录')
     }
   } catch (error) {
     console.error('Profile initialization error:', error)

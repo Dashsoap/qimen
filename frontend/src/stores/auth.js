@@ -4,11 +4,13 @@ import { API_BASE_URL } from '../utils/api.js'
 import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref(null)
+  // 从localStorage恢复用户信息
+  const savedUser = localStorage.getItem('user')
+  const user = ref(savedUser ? JSON.parse(savedUser) : null)
   const token = ref(localStorage.getItem('token') || null)
   const isLoading = ref(false)
 
-  const isAuthenticated = computed(() => !!token.value)
+  const isAuthenticated = computed(() => !!token.value && !!user.value)
 
   // 设置axios默认headers
   const setAuthHeader = (token) => {
@@ -47,10 +49,12 @@ export const useAuthStore = defineStore('auth', () => {
       const data = response.data
       
       if (data.success) {
-        token.value = data.token
-        user.value = data.user
-        localStorage.setItem('token', data.token)
-        setAuthHeader(data.token)
+        token.value = data.data.token
+        user.value = data.data.user
+        // 同时保存token和用户信息到localStorage
+        localStorage.setItem('token', data.data.token)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
+        setAuthHeader(data.data.token)
         
         return { success: true, message: data.message || '登录成功' }
       } else {
@@ -105,7 +109,9 @@ export const useAuthStore = defineStore('auth', () => {
       if (data.success) {
         token.value = data.token
         user.value = data.user
+        // 同时保存token和用户信息到localStorage
         localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
         setAuthHeader(data.token)
         
         return { success: true, message: data.message || '注册成功，获得1000积分奖励！' }
@@ -156,12 +162,36 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       token.value = null
       localStorage.removeItem('token')
+      localStorage.removeItem('user')
       setAuthHeader(null)
     }
   }
 
   const checkAuth = async () => {
-    if (!token.value) return false
+    // 首先尝试从localStorage恢复状态
+    const savedToken = localStorage.getItem('token')
+    const savedUser = localStorage.getItem('user')
+    
+    if (!savedToken) {
+      console.log('没有保存的token')
+      return false
+    }
+
+    // 如果store中没有token，从localStorage恢复
+    if (!token.value && savedToken) {
+      token.value = savedToken
+      setAuthHeader(savedToken)
+    }
+    
+    // 如果store中没有用户信息，从localStorage恢复
+    if (!user.value && savedUser) {
+      try {
+        user.value = JSON.parse(savedUser)
+        console.log('从localStorage恢复用户信息:', user.value)
+      } catch (error) {
+        console.error('解析用户信息失败:', error)
+      }
+    }
 
     try {
       const response = await axios.get(`${API_BASE_URL}/api/auth/profile`, {
@@ -172,15 +202,22 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (response.data.success) {
         user.value = response.data.user
+        // 更新localStorage中的用户信息
+        localStorage.setItem('user', JSON.stringify(response.data.user))
         setAuthHeader(token.value)
+        console.log('认证检查成功，用户信息已更新')
         return true
       } else {
+        console.log('认证检查失败，清除登录状态')
         logout()
         return false
       }
     } catch (error) {
       console.error('Auth check error:', error)
-      logout()
+      // 网络错误时不立即清除登录状态，保持本地状态
+      if (error.response && error.response.status === 401) {
+        logout()
+      }
       return false
     }
   }
@@ -274,10 +311,12 @@ export const useAuthStore = defineStore('auth', () => {
       const data = response.data
       
       if (data.success) {
-        token.value = data.token
-        user.value = data.user
-        localStorage.setItem('token', data.token)
-        setAuthHeader(data.token)
+        token.value = data.data.token
+        user.value = data.data.user
+        // 同时保存token和用户信息到localStorage
+        localStorage.setItem('token', data.data.token)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
+        setAuthHeader(data.data.token)
         
         return { success: true, message: data.message || '登录成功' }
       } else {
@@ -326,10 +365,12 @@ export const useAuthStore = defineStore('auth', () => {
       const data = response.data
       
       if (data.success) {
-        token.value = data.token
-        user.value = data.user
-        localStorage.setItem('token', data.token)
-        setAuthHeader(data.token)
+        token.value = data.data.token
+        user.value = data.data.user
+        // 同时保存token和用户信息到localStorage
+        localStorage.setItem('token', data.data.token)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
+        setAuthHeader(data.data.token)
         
         return { success: true, message: data.message || '注册成功，获得1000积分奖励！' }
       } else {

@@ -294,9 +294,9 @@ const handleSmsSubmit = async () => {
     const result = await authStore.loginWithSms({ phone: phone.value, code: code.value })
     if (result.success) {
       showMessage('登录成功', 'success')
-      setTimeout(() => {
-        router.push('/')
-      }, 1000)
+      // 确保状态更新后再跳转
+      await new Promise(resolve => setTimeout(resolve, 500))
+      router.push('/')
     } else {
       showMessage(result.message || '登录失败', 'error')
     }
@@ -323,9 +323,9 @@ const handlePasswordLogin = async () => {
     })
     if (result.success) {
       showMessage('登录成功', 'success')
-      setTimeout(() => {
-        router.push('/')
-      }, 1000)
+      // 确保状态更新后再跳转
+      await new Promise(resolve => setTimeout(resolve, 500))
+      router.push('/')
     } else {
       showMessage(result.message || '登录失败', 'error')
     }

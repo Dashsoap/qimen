@@ -54,7 +54,7 @@ VITE_APP_VERSION=2.0.0
 EOF
 
 # 安装依赖并构建
-npm install --production
+npm install
 npm run build
 
 cd ..
@@ -80,12 +80,18 @@ ssh ${SERVER_USER}@${SERVER_IP} << 'EOF'
     
     # 配置npm镜像
     npm config set registry https://registry.npmmirror.com/
-    npm config set timeout 300000
     
     # 安装依赖
     echo "📦 安装后端依赖..."
     rm -rf node_modules package-lock.json
-    npm install --production --no-audit --no-optional
+    
+    # 确保目录存在并有正确权限
+    pwd
+    ls -la
+    
+    # 使用更稳定的安装方式
+    npm cache clean --force
+    npm install --omit=dev --no-audit --no-optional --unsafe-perm
     
     # 初始化数据库
     echo "🗄️ 初始化数据库..."
