@@ -143,6 +143,7 @@ onUnmounted(() => {
   overflow-y: auto;
   position: relative;
   z-index: 1;
+  padding-bottom: 90px;
 }
 
 /* 神秘底部导航栏 */
