@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 启动奇门遁甲AI后端服务 (守护进程模式)..."
+echo "🚀 启动丁未奇门遁甲后端服务 (守护进程模式)..."
 
 # 停止现有进程
 pkill -f app.js
@@ -10,7 +10,7 @@ sleep 2
 echo "📦 检查依赖..."
 npm install --production
 
-echo "🔮 启动奇门遁甲AI服务..."
+echo "🔮 启动丁未奇门遁甲服务..."
 nohup node app.js > server.log 2>&1 &
 
 echo "✅ 服务已在后台启动"

@@ -3,11 +3,11 @@ description:
 globs:
 alwaysApply: false
 ---
-# 奇门遁甲AI系统 - Cursor Rules 导航
+# 丁未奇门遁甲系统 - Cursor Rules 导航
 
 ## 📋 规则文件概览
 
-本项目包含完整的Cursor Rules文档，帮助开发者快速理解和维护奇门遁甲AI系统。
+本项目包含完整的Cursor Rules文档，帮助开发者快速理解和维护丁未奇门遁甲系统。
 
 ### 🏗️ 项目架构规则
 [project-architecture.mdc](mdc:.cursor/rules/project-architecture.mdc)
@@ -127,7 +127,7 @@ Changes:
 
 ## 🎉 总结
 
-这套Cursor Rules为奇门遁甲AI系统提供了完整的开发指南，涵盖了从架构设计到部署运维的各个方面。通过遵循这些规则，开发者可以：
+这套Cursor Rules为丁未奇门遁甲系统提供了完整的开发指南，涵盖了从架构设计到部署运维的各个方面。通过遵循这些规则，开发者可以：
 
 - 🚀 **快速上手**: 清晰的架构和接口文档
 - 🛠️ **高效开发**: 模块化设计和开发规范

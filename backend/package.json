@@ -1,7 +1,7 @@
 {
   "name": "qimen-ai-backend",
   "version": "1.0.0",
-  "description": "奇门遁甲AI分析后端服务 - Agent模式智能解盘系统",
+  "description": "丁未奇门遁甲分析后端服务 - Agent模式智能解盘系统",
   "main": "app.js",
   "type": "module",
   "scripts": {

@@ -16,7 +16,7 @@ import { configureMiddlewares } from './src/middleware/index.js';
 import { initDatabase } from './src/database/init.js';
 
 /**
- * 奇门遁甲AI分析系统 - 统一版本
+ * 丁未奇门遁甲分析系统 - 统一版本
  * 整合了用户认证、积分系统、AI分析等所有功能
  */
 class QimenServer {
@@ -34,7 +34,7 @@ class QimenServer {
    */
   async initialize() {
     try {
-      console.log('🚀 正在初始化奇门遁甲AI系统...');
+      console.log('🚀 正在初始化丁未奇门遁甲系统...');
       
       // 1. 加载配置
       this.config = createConfig();

@@ -29,7 +29,7 @@ const AI_CONFIG = {
 };
 
 /**
- * 奇门遁甲AI分析服务
+ * 丁未奇门遁甲分析服务
  */
 export class QimenAIService {
   constructor() {
@@ -179,7 +179,7 @@ export class QimenAIService {
         sessionId,
         question,
         timestamp: new Date().toISOString(),
-        message: '🔮 正在启动奇门遁甲AI分析...',
+        message: '🔮 正在启动丁未奇门遁甲分析...',
         paipanInfo: parsedPaipan
       });
 

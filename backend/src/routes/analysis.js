@@ -22,7 +22,7 @@ async function initAgent() {
   return qimenAgent;
 }
 
-// POST /api/analysis/qimen - 奇门遁甲AI分析
+// POST /api/analysis/qimen - 丁未奇门遁甲分析
 router.post('/qimen', async (req, res) => {
   // 添加CORS支持（按教程配置）
   res.header("Access-Control-Allow-Origin", "*");

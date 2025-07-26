@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# 奇门遁甲AI后端服务启动脚本
+# 丁未奇门遁甲后端服务启动脚本
 # 使用统一的app.js入口
 
-echo "🚀 启动奇门遁甲AI后端服务..."
+echo "🚀 启动丁未奇门遁甲后端服务..."
 
 # 检查Node.js
 if ! command -v node &> /dev/null; then
@@ -25,5 +25,5 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # 启动服务
-echo "🔮 启动奇门遁甲AI服务 (统一版)..."
+echo "🔮 启动丁未奇门遁甲服务 (统一版)..."
 node app.js 

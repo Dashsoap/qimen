@@ -1,4 +1,4 @@
-# 🔮 奇门遁甲AI后端服务
+# 🔮 丁未奇门遁甲后端服务
 
 基于Agent模式的智能奇门遁甲分析系统，集成豆包AI（DeepSeek-R1）、MCP工具链和专业知识库。
 
@@ -59,7 +59,7 @@ npm start
 ### 🔮 分析接口
 
 #### POST `/api/analysis/qimen`
-完整的奇门遁甲AI分析
+完整的丁未奇门遁甲分析
 ```json
 {
   "question": "我最近的事业运势如何？",
