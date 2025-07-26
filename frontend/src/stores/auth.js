@@ -4,9 +4,20 @@ import { API_BASE_URL } from '../utils/api.js'
 import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', () => {
-  // 从localStorage恢复用户信息
+  // 从localStorage恢复用户信息 - 修复JSON解析错误
   const savedUser = localStorage.getItem('user')
-  const user = ref(savedUser ? JSON.parse(savedUser) : null)
+  let parsedUser = null
+  
+  if (savedUser && savedUser !== 'undefined' && savedUser !== 'null') {
+    try {
+      parsedUser = JSON.parse(savedUser)
+    } catch (error) {
+      console.warn('解析用户信息失败，清除无效数据:', error)
+      localStorage.removeItem('user')
+    }
+  }
+  
+  const user = ref(parsedUser)
   const token = ref(localStorage.getItem('token') || null)
   const isLoading = ref(false)
 
@@ -184,12 +195,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
     
     // 如果store中没有用户信息，从localStorage恢复
-    if (!user.value && savedUser) {
+    if (!user.value && savedUser && savedUser !== 'undefined' && savedUser !== 'null') {
       try {
         user.value = JSON.parse(savedUser)
         console.log('从localStorage恢复用户信息:', user.value)
       } catch (error) {
-        console.error('解析用户信息失败:', error)
+        console.error('解析用户信息失败，清除无效数据:', error)
+        localStorage.removeItem('user')
       }
     }
 

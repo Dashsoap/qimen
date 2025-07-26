@@ -167,7 +167,6 @@ onUnmounted(() => {
     0 -8px 32px var(--theme-shadow),
     0 -1px 0 var(--theme-border),
     inset 0 1px 0 var(--theme-border);
-  position: relative;
   overflow: hidden;
   transition: all 0.5s ease;
 }
