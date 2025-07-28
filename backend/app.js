@@ -10,6 +10,7 @@ import Joi from 'joi';
 import { createConfig, getConfig } from './src/config/AppConfig.js';
 import { createPointsService, getPointsService } from './src/services/PointsService.js';
 import { createAIService, getAIService, AnalysisStrategy } from './src/services/AIService.js';
+import { createInviteCodeService, getInviteCodeService } from './src/services/InviteCodeService.js';
 import { configureMiddlewares } from './src/middleware/index.js';
 
 // 导入数据库初始化
@@ -26,6 +27,7 @@ class QimenServer {
     this.config = null;
     this.pointsService = null;
     this.aiService = null;
+    this.inviteCodeService = null;
     this.middlewares = null;
   }
 
@@ -54,6 +56,7 @@ class QimenServer {
       console.log('🔧 初始化核心服务...');
       this.pointsService = createPointsService(this.prisma);
       this.aiService = createAIService();
+      this.inviteCodeService = createInviteCodeService(this.prisma);
       
       // 5. 配置中间件
       console.log('🛡️ 配置安全中间件...');
@@ -97,6 +100,9 @@ class QimenServer {
     // 奇门遁甲路由
     this.setupQimenRoutes();
     
+    // 邀请码路由
+    this.setupInviteCodeRoutes();
+    
     // AI分析路由
     this.setupAnalysisRoutes();
   }
@@ -123,12 +129,20 @@ class QimenServer {
       ],
       endpoints: {
         auth: {
-          register: 'POST /api/auth/register',
+          register: 'POST /api/auth/register (需要邀请码)',
           login: 'POST /api/auth/login',
           sendSms: 'POST /api/auth/send-sms',
           loginSms: 'POST /api/auth/login-sms',
           logout: 'POST /api/auth/logout',
           profile: 'GET /api/auth/profile'
+        },
+        invite: {
+          validate: 'POST /api/invite/validate',
+          generate: 'POST /api/invite/generate',
+          list: 'GET /api/invite/list',
+          stats: 'GET /api/invite/stats',
+          disable: 'PUT /api/invite/:codeId/disable',
+          enable: 'PUT /api/invite/:codeId/enable'
         },
         points: {
           get: 'GET /api/points',
@@ -230,6 +244,29 @@ class QimenServer {
   }
 
   /**
+   * 设置邀请码路由
+   */
+  setupInviteCodeRoutes() {
+    const { authMiddleware, authRateLimit } = this.middlewares;
+    
+    // 验证邀请码（公开接口）
+    this.app.post('/api/invite/validate', authRateLimit, this.validateInviteCode.bind(this));
+    
+    // 生成邀请码（需要登录）
+    this.app.post('/api/invite/generate', authMiddleware, this.generateInviteCode.bind(this));
+    
+    // 获取邀请码列表（需要登录）
+    this.app.get('/api/invite/list', authMiddleware, this.getInviteCodes.bind(this));
+    
+    // 获取邀请码统计（需要登录）
+    this.app.get('/api/invite/stats', authMiddleware, this.getInviteCodeStats.bind(this));
+    
+    // 禁用/启用邀请码（需要登录）
+    this.app.put('/api/invite/:codeId/disable', authMiddleware, this.disableInviteCode.bind(this));
+    this.app.put('/api/invite/:codeId/enable', authMiddleware, this.enableInviteCode.bind(this));
+  }
+
+  /**
    * 设置AI分析路由
    */
   setupAnalysisRoutes() {
@@ -256,7 +293,10 @@ class QimenServer {
         username: Joi.string().alphanum().min(3).max(30).required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(6).required(),
-        phone: Joi.string().pattern(/^1[3-9]\d{9}$/).optional()
+        phone: Joi.string().pattern(/^1[3-9]\d{9}$/).optional(),
+        inviteCode: Joi.string().required().messages({
+          'any.required': '邀请码是必填项'
+        })
       });
 
       const { error, value } = schema.validate(req.body);
@@ -268,7 +308,17 @@ class QimenServer {
         });
       }
 
-      const { username, email, password, phone } = value;
+      const { username, email, password, phone, inviteCode } = value;
+
+      // 验证邀请码
+      const inviteValidation = await this.inviteCodeService.validateInviteCode(inviteCode);
+      if (!inviteValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: '邀请码无效',
+          message: inviteValidation.error
+        });
+      }
 
       // 检查用户是否已存在
       const existingUser = await this.prisma.user.findFirst({
@@ -297,7 +347,7 @@ class QimenServer {
       const cryptoConfig = this.config.getCryptoConfig();
       const hashedPassword = await bcrypt.hash(password, cryptoConfig.bcryptRounds);
 
-      // 创建用户（包含积分奖励）
+      // 创建用户（包含积分奖励和邀请码记录）
       const pointsConfig = this.config.getPointsConfig();
       const user = await this.prisma.user.create({
         data: {
@@ -305,6 +355,7 @@ class QimenServer {
           email,
           password: hashedPassword,
           phone,
+          inviteCode: inviteCode,
           points: {
             create: {
               balance: pointsConfig.registerBonusPoints,
@@ -329,6 +380,20 @@ class QimenServer {
           }
         }
       });
+
+      // 使用邀请码
+      try {
+        await this.inviteCodeService.useInviteCode(inviteCode, user.id);
+      } catch (error) {
+        console.error('使用邀请码失败:', error);
+        // 如果邀请码使用失败，删除已创建的用户
+        await this.prisma.user.delete({ where: { id: user.id } });
+        return res.status(400).json({
+          success: false,
+          error: '邀请码使用失败',
+          message: error.message
+        });
+      }
 
       // 生成JWT令牌
       const jwtConfig = this.config.getJWTConfig();
@@ -1115,6 +1180,167 @@ class QimenServer {
     }
   }
 
+  // === 邀请码相关处理器 ===
+
+  /**
+   * 验证邀请码
+   */
+  async validateInviteCode(req, res) {
+    try {
+      const { code } = req.body;
+
+      if (!code) {
+        return res.status(400).json({
+          success: false,
+          error: '请提供邀请码'
+        });
+      }
+
+      const validation = await this.inviteCodeService.validateInviteCode(code);
+
+      res.json({
+        success: validation.valid,
+        valid: validation.valid,
+        message: validation.valid ? '邀请码有效' : validation.error,
+        ...(validation.valid && {
+          inviteCode: {
+            code: validation.inviteCode.code,
+            description: validation.inviteCode.description,
+            maxUses: validation.inviteCode.maxUses,
+            currentUses: validation.inviteCode.currentUses,
+            expiresAt: validation.inviteCode.expiresAt
+          }
+        })
+      });
+
+    } catch (error) {
+      console.error('验证邀请码错误:', error);
+      res.status(500).json({
+        success: false,
+        error: '验证邀请码失败'
+      });
+    }
+  }
+
+  /**
+   * 生成邀请码
+   */
+  async generateInviteCode(req, res) {
+    try {
+      const { maxUses = 1, expiresAt = null, description = null, customCode = null } = req.body;
+
+      const result = await this.inviteCodeService.generateInviteCode({
+        createdBy: req.user.id,
+        maxUses: parseInt(maxUses),
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        description,
+        customCode
+      });
+
+      res.status(201).json(result);
+
+    } catch (error) {
+      console.error('生成邀请码错误:', error);
+      res.status(400).json({
+        success: false,
+        error: '生成邀请码失败',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * 获取邀请码列表
+   */
+  async getInviteCodes(req, res) {
+    try {
+      const options = {
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 20,
+        createdBy: req.query.createdBy || req.user.id, // 默认只显示自己创建的
+        isActive: req.query.isActive !== undefined ? req.query.isActive === 'true' : null,
+        isUsed: req.query.isUsed !== undefined ? req.query.isUsed === 'true' : null
+      };
+
+      const result = await this.inviteCodeService.getInviteCodes(options);
+
+      res.json({
+        success: true,
+        ...result
+      });
+
+    } catch (error) {
+      console.error('获取邀请码列表错误:', error);
+      res.status(500).json({
+        success: false,
+        error: '获取邀请码列表失败'
+      });
+    }
+  }
+
+  /**
+   * 获取邀请码统计
+   */
+  async getInviteCodeStats(req, res) {
+    try {
+      const stats = await this.inviteCodeService.getInviteCodeStats();
+
+      res.json({
+        success: true,
+        stats
+      });
+
+    } catch (error) {
+      console.error('获取邀请码统计错误:', error);
+      res.status(500).json({
+        success: false,
+        error: '获取邀请码统计失败'
+      });
+    }
+  }
+
+  /**
+   * 禁用邀请码
+   */
+  async disableInviteCode(req, res) {
+    try {
+      const { codeId } = req.params;
+
+      const result = await this.inviteCodeService.disableInviteCode(codeId);
+
+      res.json(result);
+
+    } catch (error) {
+      console.error('禁用邀请码错误:', error);
+      res.status(400).json({
+        success: false,
+        error: '禁用邀请码失败',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * 启用邀请码
+   */
+  async enableInviteCode(req, res) {
+    try {
+      const { codeId } = req.params;
+
+      const result = await this.inviteCodeService.enableInviteCode(codeId);
+
+      res.json(result);
+
+    } catch (error) {
+      console.error('启用邀请码错误:', error);
+      res.status(400).json({
+        success: false,
+        error: '启用邀请码失败',
+        message: error.message
+      });
+    }
+  }
+
   // === 辅助方法 ===
 
   /**
@@ -1197,11 +1423,18 @@ class QimenServer {
 📊 数据库: Prisma ORM
 
 🚀 核心功能:
+   ✅ 邀请码注册制度
    ✅ 手机号短信登录
    ✅ 用户注册登录
    ✅ 积分系统
    ✅ 签到功能
    ✅ AI分析服务
+
+🎫 邀请码制度说明:
+   - 注册需要有效邀请码
+   - 邀请码支持自定义和随机生成
+   - 支持设置使用次数和过期时间
+   - 管理员可以批量生成邀请码
 
 🔧 短信验证码说明:
    - 开发环境: 验证码显示在控制台

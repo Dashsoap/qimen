@@ -238,8 +238,8 @@ onUnmounted(() => {
 .scene-container {
   position: relative;
   width: 100%;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow: visible;
   background: linear-gradient(to bottom, #000022, #000033, #000044);
 }
 
@@ -297,11 +297,9 @@ onUnmounted(() => {
 
 /* 专业问卜界面样式 */
 .divination-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
+  min-height: 100vh;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -309,7 +307,6 @@ onUnmounted(() => {
   justify-content: flex-start;
   padding: 15px;
   box-sizing: border-box;
-  overflow-y: auto;
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 0.1) 0%,

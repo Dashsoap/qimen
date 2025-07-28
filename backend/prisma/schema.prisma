@@ -16,11 +16,16 @@ model User {
   email     String   @unique
   password  String
   phone     String?  @unique
+  inviteCode String? // 注册时使用的邀请码
   
   profile   Profile?
   
   subscription Subscription?
   points      UserPoints?
+  
+  // 邀请码关联
+  usedInviteCodes    InviteCode[] @relation("InviteCodeUsedBy")
+  createdInviteCodes InviteCode[] @relation("InviteCodeCreatedBy")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -99,4 +104,25 @@ model SmsCode {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model InviteCode {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  createdBy   String?  // 创建者用户ID，系统生成的为null
+  usedBy      String?  // 使用者用户ID
+  usedAt      DateTime? // 使用时间
+  maxUses     Int      @default(1)  // 最大使用次数
+  currentUses Int      @default(0)  // 当前使用次数
+  expiresAt   DateTime? // 过期时间，null表示永不过期
+  isActive    Boolean  @default(true) // 是否激活
+  description String?  // 描述信息
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // 关联使用者
+  usedByUser  User?    @relation("InviteCodeUsedBy", fields: [usedBy], references: [id])
+  // 关联创建者
+  createdByUser User?  @relation("InviteCodeCreatedBy", fields: [createdBy], references: [id])
 }

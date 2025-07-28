@@ -1,9 +1,8 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router'
 import { onMounted, onUnmounted } from 'vue'
 import performanceManager from './utils/performance.js'
 import { useThemeStore } from './stores/theme'
-import ThemeToggle from './components/ThemeToggle.vue'
 
 // 主题管理
 const themeStore = useThemeStore()
@@ -12,6 +11,10 @@ onMounted(() => {
   // 初始化主题
   themeStore.initTheme()
   
+  // 确保body不会产生滚动条
+  document.body.style.overflow = 'hidden'
+  document.documentElement.style.overflow = 'hidden'
+  
   // 性能管理器会自动处理页面可见性和内存管理
   performanceManager.addObserver((event, data) => {
     // 可以在这里处理性能事件
@@ -19,25 +22,24 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // 恢复body滚动
+  document.body.style.overflow = ''
+  document.documentElement.style.overflow = ''
+  
   // 清理性能管理器
   performanceManager.destroy()
 })
 </script>
 
 <template>
-  <div class="app-container">
-    <!-- 主题切换按钮 -->
-    <div class="theme-toggle-fixed">
-      <ThemeToggle />
-    </div>
-    
-    <!-- 主内容区域 -->
-    <main class="main-content">
+  <div id="app-root">
+    <!-- 主内容滚动容器 - 唯一的滚动区域 -->
+    <main class="main-scroll-container">
       <RouterView />
     </main>
 
-    <!-- 神秘底部导航栏 -->
-    <nav class="mystical-nav">
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav">
       <!-- 背景装饰 -->
       <div class="nav-bg-effect"></div>
       <div class="nav-particles"></div>
@@ -75,18 +77,24 @@ onUnmounted(() => {
         <span class="nav-text">奇门</span>
       </RouterLink>
 
-      <RouterLink to="/about" class="nav-item" active-class="active">
+      <RouterLink to="/settings" class="nav-item" active-class="active">
         <div class="nav-icon-wrapper">
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-              <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 17H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 1V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 21V23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4.22 4.22L5.64 5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M18.36 18.36L19.78 19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M1 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M21 12H23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4.22 19.78L5.64 18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
           <div class="nav-glow"></div>
         </div>
-        <span class="nav-text">关于</span>
+        <span class="nav-text">设置</span>
       </RouterLink>
 
       <RouterLink to="/profile" class="nav-item" active-class="active">
@@ -106,25 +114,24 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.app-container {
+/* 根容器 - 固定视口高度，不产生滚动 */
+#app-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
   background: linear-gradient(180deg, var(--theme-background) 0%, var(--theme-background-soft) 50%, var(--theme-background) 100%);
-  position: relative;
   transition: background 0.5s ease;
+  overflow: hidden; /* 防止根容器滚动 */
 }
 
-.theme-toggle-fixed {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1001;
-}
-
-.app-container::before {
+/* 背景装饰 - 使用绝对定位避免影响滚动 */
+#app-root::before {
   content: '';
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -138,20 +145,28 @@ onUnmounted(() => {
   transition: background 0.5s ease;
 }
 
-.main-content {
+
+/* 主内容滚动容器 - 唯一的滚动区域 */
+.main-scroll-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   z-index: 1;
+  /* 为底部导航栏留出空间 */
   padding-bottom: 90px;
+  /* 优化滚动性能 */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
-/* 神秘底部导航栏 */
-.mystical-nav {
-  position: fixed;
+/* 底部导航栏 - 固定在底部 */
+.bottom-nav {
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  height: 78px; /* 固定高度 */
   background: linear-gradient(180deg, 
     var(--theme-background-mute) 0%, 
     var(--theme-background-soft) 50%, 
@@ -162,7 +177,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 12px 8px 12px 8px;
+  padding: 12px 8px;
   z-index: 1000;
   box-shadow: 
     0 -8px 32px var(--theme-shadow),
@@ -352,8 +367,13 @@ onUnmounted(() => {
 
 /* 安全区域适配 */
 @supports (padding: max(0px)) {
-  .mystical-nav {
+  .bottom-nav {
     padding-bottom: max(12px, env(safe-area-inset-bottom));
+    height: max(78px, calc(78px + env(safe-area-inset-bottom)));
+  }
+  
+  .main-scroll-container {
+    padding-bottom: max(90px, calc(90px + env(safe-area-inset-bottom)));
   }
 }
 
@@ -382,6 +402,14 @@ onUnmounted(() => {
     top: 15px;
     right: 15px;
   }
+  
+  .bottom-nav {
+    height: 70px;
+  }
+  
+  .main-scroll-container {
+    padding-bottom: 82px;
+  }
 }
 
 /* 超小屏幕优化 */
@@ -394,59 +422,90 @@ onUnmounted(() => {
 
 /* 平板横屏优化 */
 @media (min-width: 768px) and (orientation: landscape) {
-  .mystical-nav {
+  .bottom-nav {
     max-width: 500px;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 24px 24px 0 0;
-    margin-bottom: 0;
+  }
+}
+
+/* 性能优化：减少动画复杂度 */
+@media (max-width: 768px) {
+  .nav-particles {
+    opacity: 0.3;
+  }
+  
+  .nav-bg-effect {
+    opacity: 0.5;
+  }
+  
+  .mystical-glow {
+    animation-duration: 6s;
+  }
+  
+  .mystical-highlight.active .nav-icon {
+    animation-duration: 8s;
+  }
+}
+
+/* 低内存模式：进一步简化效果 */
+@media (max-width: 480px) {
+  .nav-particles {
+    display: none;
+  }
+  
+  .nav-bg-effect {
+    display: none;
+  }
+  
+  #app-root::before {
+    display: none;
   }
 }
 </style>
 
 <style>
-/* 全局神秘主题 */
+/* 全局样式重置和优化 */
 * {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
+  overflow: hidden; /* 防止body产生滚动条 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
   background: var(--theme-background);
   color: var(--theme-primary);
-  overflow-x: hidden;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 #app {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden; /* 防止app容器滚动 */
   background: var(--theme-background);
   transition: background-color 0.5s ease;
 }
 
-/* 移除默认样式冲突 */
-.router-view-container {
-  margin-top: 0 !important;
-  padding: 0 !important;
-}
 
-/* 自定义滚动条 - 神秘风格 */
-::-webkit-scrollbar {
+/* 自定义滚动条 - 仅应用于主滚动容器 */
+.main-scroll-container::-webkit-scrollbar {
   width: 6px;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.8);
+.main-scroll-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb {
+.main-scroll-container::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(212, 175, 55, 0.6), rgba(139, 69, 19, 0.6));
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.main-scroll-container::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, rgba(255, 215, 0, 0.8), rgba(212, 175, 55, 0.8));
 }
 
@@ -460,39 +519,5 @@ body {
 .pause-animations *::after {
   animation-play-state: paused !important;
   transition: none !important;
-}
-
-/* 减少动画复杂度以降低内存使用 */
-@media (max-width: 768px) {
-  .nav-particles {
-    opacity: 0.3; /* 降低粒子效果透明度 */
-  }
-  
-  .nav-bg-effect {
-    opacity: 0.5; /* 降低背景效果 */
-  }
-  
-  .mystical-glow {
-    animation-duration: 6s; /* 减慢动画速度 */
-  }
-  
-  .mystical-highlight.active .nav-icon {
-    animation-duration: 8s; /* 减慢旋转动画 */
-  }
-}
-
-/* 低内存模式：进一步简化效果 */
-@media (max-width: 480px) {
-  .nav-particles {
-    display: none; /* 完全关闭粒子效果 */
-  }
-  
-  .nav-bg-effect {
-    display: none; /* 关闭背景效果 */
-  }
-  
-  .app-container::before {
-    display: none; /* 关闭复杂背景 */
-  }
 }
 </style>
