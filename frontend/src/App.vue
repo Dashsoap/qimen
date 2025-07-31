@@ -117,8 +117,6 @@ onUnmounted(() => {
   overflow-x: hidden;
   position: relative;
   z-index: 1;
-  /* 为底部导航栏留出空间 */
-  padding-bottom: 90px;
   /* 优化滚动性能 */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
@@ -126,7 +124,7 @@ onUnmounted(() => {
 
 /* 底部导航栏 - 固定在底部 */
 .bottom-nav {
-  position: absolute;
+  /* position: absolute; */
   bottom: 0;
   left: 0;
   right: 0;

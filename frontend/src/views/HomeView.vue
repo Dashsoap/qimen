@@ -245,7 +245,6 @@ const handleSubmit = () => {
 <style scoped>
 .home-container {
   width: 100%;
-  min-height: 100vh;
   position: relative;
 }
 
@@ -311,7 +310,7 @@ const handleSubmit = () => {
 
 /* 主要内容 */
 .main-content {
-  padding: 22px 16px 80px;
+  padding: 22px 16px 0px;
   max-width: 375px;
   margin: 0 auto;
 }

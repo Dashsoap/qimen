@@ -3,7 +3,6 @@
     <!-- 顶部用户信息区域 -->
     <div class="header-section">
       <div class="header-top">
-        <h1>我的</h1>
         <button v-if="isAuthenticated && !checkinStatus?.isCheckedIn" 
                 @click="doCheckin" 
                 class="header-checkin-btn"
@@ -35,17 +34,6 @@
       </div>
     </div>
 
-    <!-- 邀请好友横幅 -->
-    <div class="invite-banner">
-      <div class="invite-content">
-        <h3>邀好友 赢好礼</h3>
-        <p>新朋友可得5次免费排盘机会</p>
-      </div>
-      <button class="invite-btn" @click="inviteFriend">
-        立即邀请
-        <span class="invite-arrow">›</span>
-      </button>
-    </div>
 
     <!-- 快捷功能区域 -->
     <div class="quick-actions">
@@ -125,9 +113,9 @@
     </div>
 
     <!-- 退出登录按钮 -->
-    <div v-if="isAuthenticated" class="logout-section">
+    <!-- <div v-if="isAuthenticated" class="logout-section">
       <button @click="handleLogout" class="logout-btn">退出登录</button>
-    </div>
+    </div> -->
 
     <!-- 提示消息 -->
     <div v-if="message" class="message" :class="messageType">
@@ -376,92 +364,59 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+/* 暖色主题CSS变量 */
+:root {
+  --bg-primary: #fefdf7;
+  --bg-card: #FFFFFF;
+  --text-primary: #753c14;
+  --text-secondary: #5f3d25;
+  --text-muted: #999999;
+  --accent-color: #d3844e;
+  --accent-light: #f3c165;
+  --border-color: #E0E0E0;
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
 
 .profile-view {
-  min-height: 100vh;
-  background: 
-    linear-gradient(180deg, #1A1611 0%, #0F0C08 50%, #1A1611 100%);
-  font-family: 'Noto Serif SC', serif;
-  color: #C4A876;
+  background: var(--bg-primary);
+  font-family: 'Alibaba PuHuiTi 2.0', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--text-primary);
   position: relative;
 }
 
-/* 简约纹理背景 */
-.profile-view::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="subtle" patternUnits="userSpaceOnUse" width="40" height="40"><rect width="40" height="40" fill="none"/><line x1="0" y1="20" x2="40" y2="20" stroke="%23C4A876" stroke-width="0.1" opacity="0.05"/><line x1="20" y1="0" x2="20" y2="40" stroke="%23C4A876" stroke-width="0.1" opacity="0.05"/></pattern></defs><rect width="100" height="100" fill="url(%23subtle)"/></svg>');
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* 顶部用户信息区域 - 严肃设计 */
+/* 顶部用户信息区域 - 透明背景设计 */
 .header-section {
-  background: 
-    linear-gradient(135deg, 
-      rgba(47, 40, 32, 0.8) 0%,
-      rgba(31, 26, 20, 0.9) 100%
-    );
-  border-bottom: 1px solid rgba(196, 168, 118, 0.2);
-  padding: 28px 20px 32px;
+  background: transparent;
+  margin: 0 16px;
+  padding: 20px;
   position: relative;
-  z-index: 1;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
 .header-top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 24px;
-}
-
-.header-top h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
-  color: #C4A876;
-  letter-spacing: 3px;
+  margin-bottom: 16px;
   position: relative;
 }
 
-.header-top h1::after {
-  content: '✦';
-  position: absolute;
-  right: -20px;
-  top: -5px;
-  font-size: 14px;
-  color: #C4A876;
-  animation: twinkle 2s ease-in-out infinite;
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
 .header-checkin-btn {
-  background: rgba(196, 168, 118, 0.1);
-  border: 1px solid rgba(196, 168, 118, 0.3);
-  border-radius: 4px;
-  padding: 8px 18px;
-  color: #C4A876;
-  font-size: 13px;
-  font-weight: 500;
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 400;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
 .header-checkin-btn:hover:not(:disabled) {
-  background: rgba(196, 168, 118, 0.15);
-  border-color: rgba(196, 168, 118, 0.4);
+  opacity: 0.8;
 }
 
 .header-checkin-btn:disabled {
@@ -475,57 +430,57 @@ onMounted(async () => {
   gap: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background: rgba(196, 168, 118, 0.03);
-  border: 1px solid rgba(196, 168, 118, 0.08);
+  padding: 0;
+  margin-top: 20px;
 }
 
 .user-profile:hover, .guest-profile:hover {
-  background: rgba(196, 168, 118, 0.06);
-  border-color: rgba(196, 168, 118, 0.15);
+  opacity: 0.8;
 }
 
 .user-avatar, .guest-avatar {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: 
-    linear-gradient(135deg, rgba(196, 168, 118, 0.2), rgba(196, 168, 118, 0.1));
-  border: 2px solid rgba(196, 168, 118, 0.3);
+  background: #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #C4A876;
+  color: var(--text-primary);
   font-size: 20px;
   font-weight: 600;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.user-avatar, .guest-avatar {
-  position: relative;
+.user-info, .guest-info {
+  flex: 1;
 }
 
 .user-name, .guest-name {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 4px;
-  color: #C4A876;
+  margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
 .user-level, .guest-desc {
-  font-size: 14px;
-  color: rgba(196, 168, 118, 0.7);
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(236deg, rgba(211,132,78,0.3) 0%, rgba(243,193,101,0.3) 100%);
+  border-radius: 38px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .profile-arrow {
   font-size: 16px;
-  color: rgba(196, 168, 118, 0.5);
+  color: var(--text-muted);
   transition: all 0.3s ease;
 }
 
 .user-profile:hover .profile-arrow, .guest-profile:hover .profile-arrow {
-  color: rgba(196, 168, 118, 0.8);
+  color: var(--accent-color);
 }
 
 /* 简洁卡片设计 */
@@ -543,53 +498,29 @@ onMounted(async () => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* 邀请横幅 - 简洁设计 */
+/* 邀请横幅 - 浅色主题 */
 .invite-banner {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: 
-    linear-gradient(135deg, 
-      rgba(47, 40, 32, 0.6) 0%,
-      rgba(31, 26, 20, 0.7) 100%
-    );
-  border: 1px solid rgba(196, 168, 118, 0.15);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  margin: 20px 16px;
+  margin: 0 16px 16px;
   padding: 20px;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.invite-banner::before {
-  content: '❋';
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font-size: 12px;
-  color: rgba(212, 175, 55, 0.4);
-}
-
-.invite-banner::after {
-  content: '❋';
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  font-size: 12px;
-  color: rgba(212, 175, 55, 0.4);
+  box-shadow: var(--shadow-light);
 }
 
 .invite-content h3 {
-  color: #C4A876;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 6px 0;
-  letter-spacing: 1px;
 }
 
 .invite-content p {
-  color: rgba(196, 168, 118, 0.7);
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 14px;
   margin: 0;
   line-height: 1.4;
 }
@@ -598,149 +529,97 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(196, 168, 118, 0.08);
-  border: 1px solid rgba(196, 168, 118, 0.2);
-  border-radius: 6px;
+  background: var(--accent-light);
+  border: 1px solid var(--accent-color);
+  border-radius: 20px;
   padding: 10px 16px;
-  color: #C4A876;
-  font-size: 13px;
+  color: var(--accent-color);
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .invite-btn:hover {
-  background: rgba(196, 168, 118, 0.12);
-  border-color: rgba(196, 168, 118, 0.3);
+  background: var(--accent-color);
+  color: white;
 }
 
-/* 快捷功能 - 简洁设计 */
+/* 快捷功能 - 一行4个图标布局 */
 .quick-actions {
   display: flex;
-  justify-content: space-around;
-  background: 
-    linear-gradient(135deg, 
-      rgba(47, 40, 32, 0.6) 0%,
-      rgba(31, 26, 20, 0.7) 100%
-    );
-  border: 1px solid rgba(196, 168, 118, 0.15);
-  border-radius: 12px;
-  margin: 0 16px 20px;
-  padding: 24px 20px;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  justify-content: space-between;
+  background: var(--bg-card);
+  border-radius: 16px;
+  margin: 16px;
+  padding: 20px 38px;
+  box-shadow: var(--shadow-light);
 }
 
 .action-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
+  width: 54px;
 }
 
 .action-item:hover {
-  background: rgba(196, 168, 118, 0.05);
+  opacity: 0.8;
 }
 
 .action-icon {
-  width: 36px;
-  height: 36px;
-  color: #C4A876;
+  width: 28px;
+  height: 28px;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(196, 168, 118, 0.2);
-  border-radius: 50%;
-  background: rgba(196, 168, 118, 0.03);
   transition: all 0.3s ease;
+  font-size: 20px;
+  margin-bottom: 4px;
 }
 
 .action-item:hover .action-icon {
-  border-color: rgba(196, 168, 118, 0.3);
-  background: rgba(196, 168, 118, 0.06);
+  opacity: 0.8;
 }
 
 .action-item span {
-  color: #C4A876;
+  color: var(--text-secondary);
   font-size: 13px;
   text-align: center;
-  font-weight: 500;
+  font-weight: 400;
+  line-height: 1.2;
 }
 
-/* 更多服务 - 严肃设计 */
+/* 更多服务 - 暖色主题设计 */
 .service-card {
-  background: 
-    linear-gradient(135deg, 
-      rgba(47, 40, 32, 0.7) 0%,
-      rgba(31, 26, 20, 0.8) 100%
-    );
-  border: 1px solid rgba(196, 168, 118, 0.2);
+  background: var(--bg-card);
   margin: 0 16px;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.service-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+  box-shadow: var(--shadow-light);
 }
 
 .service-header {
-  background: 
-    linear-gradient(135deg, rgba(196, 168, 118, 0.15), rgba(196, 168, 118, 0.1));
-  color: #C4A876;
-  padding: 16px 20px;
-  font-size: 15px;
-  font-weight: 600;
-  text-align: center;
-  letter-spacing: 2px;
-  border-bottom: 1px solid rgba(196, 168, 118, 0.1);
-}
-
-.service-header::before {
-  content: '◆';
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-.service-header::after {
-  content: '◆';
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 12px;
-  opacity: 0.7;
+  display: none;
 }
 
 .service-item {
   display: flex;
   align-items: center;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(196, 168, 118, 0.08);
+  padding: 16px 40px;
+  border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--bg-card);
+  position: relative;
 }
 
 .service-item:hover {
-  background: rgba(196, 168, 118, 0.05);
+  opacity: 0.8;
 }
 
 .service-item:last-child {
@@ -755,84 +634,79 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(196, 168, 118, 0.8);
 }
 
 .service-name {
   flex: 1;
-  color: #C4A876;
-  font-size: 15px;
-  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .service-arrow {
-  color: rgba(196, 168, 118, 0.5);
+  color: var(--text-muted);
   font-size: 16px;
   transition: all 0.3s ease;
 }
 
 .service-item:hover .service-arrow {
-  color: rgba(196, 168, 118, 0.8);
+  color: var(--accent-color);
 }
 
-/* 退出登录 - 严肃设计 */
+/* 退出登录 - 浅色主题 */
 .logout-section {
   padding: 24px 16px;
 }
 
 .logout-btn {
   width: 100%;
-  background: rgba(139, 69, 19, 0.2);
-  border: 1px solid rgba(205, 92, 92, 0.4);
+  background: #FFF5F5;
+  border: 1px solid #FEB2B2;
   border-radius: 8px;
   padding: 14px;
-  color: rgba(205, 92, 92, 0.9);
+  color: #E53E3E;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
 }
 
 .logout-btn:hover {
-  background: rgba(139, 69, 19, 0.3);
-  border-color: rgba(205, 92, 92, 0.6);
-  color: #CD5C5C;
+  background: #FED7D7;
+  border-color: #FC8181;
 }
 
-/* 消息提示 - 简洁设计 */
+/* 消息提示 - 浅色主题 */
 .message {
   position: fixed;
   top: 80px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 14px 24px;
+  padding: 12px 20px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   z-index: 1000;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   animation: fadeInOut 3s ease-in-out;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
 .message.success {
-  background: rgba(46, 125, 50, 0.9);
-  border-color: rgba(46, 125, 50, 0.3);
-  color: #E8F5E8;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #166534;
 }
 
 .message.error {
-  background: rgba(211, 47, 47, 0.9);
-  border-color: rgba(211, 47, 47, 0.3);
-  color: #FFEBEE;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
 }
 
 .message.info {
-  background: rgba(196, 168, 118, 0.9);
-  border-color: rgba(196, 168, 118, 0.3);
-  color: #1A1611;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
 }
 
 @keyframes fadeInOut {
@@ -846,64 +720,4 @@ onMounted(async () => {
   }
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .header-section {
-    padding: 24px 16px 28px;
-  }
-  
-  .header-top h1 {
-    font-size: 22px;
-    letter-spacing: 2px;
-  }
-  
-  .simple-card, .invite-banner, .quick-actions, .service-card {
-    margin: 16px 12px;
-    padding: 16px;
-  }
-  
-  .logout-section {
-    padding: 20px 12px;
-  }
-}
-
-@media (max-width: 375px) {
-  .header-top h1 {
-    font-size: 20px;
-    letter-spacing: 1.5px;
-  }
-  
-  .header-checkin-btn {
-    padding: 6px 14px;
-    font-size: 12px;
-  }
-  
-  .action-item span {
-    font-size: 12px;
-  }
-  
-  .service-name {
-    font-size: 14px;
-  }
-  
-  .simple-card, .invite-banner, .quick-actions, .service-card {
-    margin: 12px 8px;
-    padding: 12px;
-  }
-}
-
-/* 移除过多动画效果，保持庄重 */
-* {
-  transition-duration: 0.3s !important;
-}
-
-/* 简约的悬停效果 */
-.header-section, .simple-card, .invite-banner, .quick-actions, .service-card {
-  transition: all 0.3s ease;
-}
-
-/* 移除浮动动画，保持稳重 */
-.profile-view::after {
-  display: none;
-}
-</style> 
+</style>
