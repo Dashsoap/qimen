@@ -17,6 +17,13 @@ build/
 out/
 /frontend/android
 /qimen-apk
+
+# React Frontend Build (迁移后的React项目)
+/react-frontend/dist/
+/react-frontend/build/
+/react-frontend/android/
+/react-frontend/ios/
+
 # Environment variables
 .env
 .env.local
@@ -27,6 +34,16 @@ out/
 
 # Deployment configuration with sensitive information
 部署指南.md
+
+# Migration related files (迁移相关文件)
+# Vue项目备份和迁移过程中的临时文件
+*_backup/
+*_backup.*
+migration_backup/
+vue-backup/
+*.migration.md
+*迁移*.md
+*migration*.md
 
 # Logs
 logs
@@ -104,6 +121,17 @@ generated/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# React specific (React迁移项目特定)
+# Redux DevTools logs
+redux-logger*
+# Tailwind CSS generated files
+tailwind.css
+# React build optimization files
+.react-build/
+# Vite specific
+.vite/
+vite.config.js.timestamp-*
 
 # Mobile Development (Cordova/Capacitor)
 # Cordova platforms and plugins
@@ -268,3 +296,21 @@ public/
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+
+# Vue to React Migration Specific (Vue到React迁移特定文件)
+# 保留原Vue项目作为参考，但忽略其构建文件
+/frontend/dist/
+/frontend/build/
+/frontend/node_modules/
+
+# 迁移过程中的比较和分析文件
+vue-react-comparison/
+migration-analysis/
+component-mapping/
+*.vue.bak
+*.jsx.bak
+
+# 迁移工具生成的临时文件
+migration-temp/
+conversion-log/
+*.conversion.log

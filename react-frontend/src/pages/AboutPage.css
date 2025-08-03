@@ -1,0 +1,174 @@
+/* AboutPage样式 */
+.about-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px 16px;
+  background: #FEFDF7;
+}
+
+/* 页面标题 */
+.about-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.about-title {
+  font-family: 'Source Han Serif CN', serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #753C15;
+  margin: 0 0 8px 0;
+}
+
+.about-subtitle {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.7);
+  margin: 0;
+}
+
+/* 内容区域 */
+.about-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 内容区块 */
+.about-section {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  font-family: 'PingFang SC', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #753C15;
+  margin: 0 0 16px 0;
+}
+
+.section-text {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(117, 60, 21, 0.8);
+  margin: 0 0 16px 0;
+}
+
+.section-text:last-child {
+  margin-bottom: 0;
+}
+
+/* 功能列表 */
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.feature-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.feature-text h3 {
+  font-family: 'PingFang SC', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #753C15;
+  margin: 0 0 4px 0;
+}
+
+.feature-text p {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.6);
+  margin: 0;
+}
+
+/* 版本信息 */
+.version-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.version-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.version-item:last-child {
+  border-bottom: none;
+}
+
+.version-label {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.8);
+}
+
+.version-value {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: #753C15;
+  font-weight: 500;
+}
+
+/* 联系信息 */
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.contact-label {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.8);
+}
+
+.contact-value {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: #D3844E;
+  font-weight: 500;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .about-container {
+    padding: 16px 12px;
+  }
+  
+  .feature-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .feature-icon {
+    margin-top: 0;
+  }
+} 

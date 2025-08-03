@@ -1,0 +1,285 @@
+/* SettingsPage样式 */
+.settings-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px 16px;
+  background: #FEFDF7;
+}
+
+/* 页面标题 */
+.settings-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.settings-title {
+  font-family: 'Source Han Serif CN', serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #753C15;
+  margin: 0 0 8px 0;
+}
+
+.settings-subtitle {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.7);
+  margin: 0;
+}
+
+/* 设置内容 */
+.settings-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 设置区块 */
+.settings-section {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-family: 'PingFang SC', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #753C15;
+  margin: 0 0 4px 0;
+}
+
+.section-description {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.6);
+  margin: 0;
+}
+
+/* 设置项 */
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  font-family: 'PingFang SC', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #753C15;
+  margin: 0 0 4px 0;
+}
+
+.setting-desc {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.6);
+  margin: 0;
+}
+
+/* 主题切换按钮 */
+.theme-toggle-wrapper {
+  margin-left: 16px;
+}
+
+.theme-toggle-btn {
+  position: relative;
+  width: 60px;
+  height: 32px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.theme-toggle-btn.light-mode {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+}
+
+.theme-toggle-btn.dark-mode {
+  background: linear-gradient(135deg, #4A5568, #2D3748);
+}
+
+.toggle-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 28px;
+  height: 28px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle-btn.dark-mode .toggle-slider {
+  transform: translateX(28px);
+}
+
+/* 开关样式 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #E5E5E5;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #D3844E;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* 关于信息 */
+.about-info {
+  padding: 16px 0;
+}
+
+.about-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.about-item:last-child {
+  border-bottom: none;
+}
+
+.about-label {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: rgba(117, 60, 21, 0.8);
+}
+
+.about-value {
+  font-family: 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: #753C15;
+  font-weight: 500;
+}
+
+/* 操作按钮 */
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'PingFang SC', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn.primary {
+  background: #D3844E;
+  color: #FFFFFF;
+}
+
+.action-btn.primary:hover {
+  background: #B8743E;
+  transform: translateY(-1px);
+}
+
+.action-btn.secondary {
+  background: #F5F5F5;
+  color: #753C15;
+  border: 1px solid #E5E5E5;
+}
+
+.action-btn.secondary:hover {
+  background: #EEEEEE;
+  border-color: #D3844E;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 16px 12px;
+  }
+  
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .theme-toggle-wrapper {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+  
+  .settings-actions {
+    flex-direction: column;
+  }
+} 
