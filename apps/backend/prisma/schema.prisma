@@ -5,9 +5,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// 支持多数据库配置
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "sqlite" // 开发环境使用SQLite
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -22,6 +23,7 @@ model User {
   
   subscription Subscription?
   points      UserPoints?
+  weiCoins    UserWeiCoins? // 未币账户
   
   // 邀请码关联
   usedInviteCodes    InviteCode[] @relation("InviteCodeUsedBy")
@@ -29,6 +31,12 @@ model User {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // 添加索引以提升查询性能
+  @@index([username])
+  @@index([email])
+  @@index([phone])
+  @@index([createdAt])
 }
 
 model Profile {
@@ -41,6 +49,8 @@ model Profile {
   birthPlace String?
   
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
 }
 
 model Subscription {
@@ -55,6 +65,10 @@ model Subscription {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   paymentHistory PaymentRecord[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([endDate])
 }
 
 model PaymentRecord {
@@ -69,6 +83,10 @@ model PaymentRecord {
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   
   createdAt      DateTime @default(now())
+  
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model UserPoints {
@@ -81,6 +99,9 @@ model UserPoints {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   pointsRecords PointsRecord[]
+  
+  @@index([userId])
+  @@index([balance])
 }
 
 model PointsRecord {
@@ -93,6 +114,182 @@ model PointsRecord {
   userPoints   UserPoints @relation(fields: [userPointsId], references: [id], onDelete: Cascade)
   
   createdAt    DateTime @default(now())
+  
+  // 复合索引优化查询性能
+  @@index([userPointsId, type])
+  @@index([userPointsId, createdAt])
+  @@index([type, createdAt])
+}
+
+// 未币账户 - 区块链数字货币系统
+model UserWeiCoins {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  walletAddress     String?  @unique    // 区块链钱包地址
+  balance           Float    @default(0.0)      // 当前未币余额（支持小数）
+  lockedBalance     Float    @default(0.0)      // 锁定余额（质押、挖矿等）
+  totalMined        Float    @default(0.0)      // 总挖矿获得
+  totalStaked       Float    @default(0.0)      // 总质押数量
+  totalTraded       Float    @default(0.0)      // 总交易量
+  stakingRewards    Float    @default(0.0)      // 质押奖励累计
+  miningRewards     Float    @default(0.0)      // 挖矿奖励累计
+  
+  // 区块链相关状态
+  lastMiningTime    DateTime? // 最后挖矿时间
+  stakingStartTime  DateTime? // 开始质押时间
+  miningPower       Int      @default(0)       // 算力值
+  stakingLevel      Int      @default(0)       // 质押等级
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  weiCoinRecords    WeiCoinRecord[]
+  miningRecords     MiningRecord[]
+  stakingRecords    StakingRecord[]
+  tradeOrders       TradeOrder[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([balance])
+  @@index([walletAddress])
+  @@index([miningPower])
+}
+
+// 未币交易记录
+model WeiCoinRecord {
+  id              String   @id @default(uuid())
+  userWeiCoinsId  String
+  amount          Float    // 未币数量（支持小数）
+  type            String   // 'mining' | 'staking' | 'trade' | 'reward' | 'transfer' | 'ecosystem'
+  source          String?  // 来源：'mining_reward' | 'staking_reward' | 'trade_buy' | 'trade_sell' | 'ecosystem_reward'
+  description     String?  // 交易描述
+  transactionHash String?  // 区块链交易哈希（模拟）
+  blockHeight     Int?     // 区块高度（模拟）
+  fromAddress     String?  // 发送方地址
+  toAddress       String?  // 接收方地址
+  gasUsed         Float?   // 消耗的gas费用
+  status          String   @default("confirmed") // 'pending' | 'confirmed' | 'failed'
+  
+  userWeiCoins    UserWeiCoins @relation(fields: [userWeiCoinsId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  
+  // 复合索引优化查询性能
+  @@index([userWeiCoinsId, type])
+  @@index([userWeiCoinsId, createdAt])
+  @@index([type, source])
+  @@index([transactionHash])
+  @@index([status])
+}
+
+// 挖矿记录表
+model MiningRecord {
+  id              String   @id @default(uuid())
+  userWeiCoinsId  String
+  miningType      String   // 'daily' | 'activity' | 'referral' | 'special_event'
+  difficulty      Float    @default(1.0)  // 挖矿难度
+  hashRate        Float    @default(1.0)  // 算力
+  reward          Float    // 挖矿奖励
+  energyCost      Int      @default(0)    // 消耗能量/体力
+  blockHash       String?  // 区块哈希（模拟）
+  blockHeight     Int?     // 区块高度（模拟）
+  
+  userWeiCoins    UserWeiCoins @relation(fields: [userWeiCoinsId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([userWeiCoinsId, createdAt])
+  @@index([miningType])
+}
+
+// 质押记录表
+model StakingRecord {
+  id              String   @id @default(uuid())
+  userWeiCoinsId  String
+  amount          Float    // 质押数量
+  duration        Int      // 质押天数
+  apr             Float    // 年化收益率
+  reward          Float    @default(0.0)  // 累计奖励
+  status          String   // 'active' | 'completed' | 'cancelled'
+  
+  startTime       DateTime
+  endTime         DateTime
+  
+  userWeiCoins    UserWeiCoins @relation(fields: [userWeiCoinsId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userWeiCoinsId, status])
+  @@index([status, endTime])
+}
+
+// 交易订单表（未币交易市场）
+model TradeOrder {
+  id              String   @id @default(uuid())
+  userWeiCoinsId  String
+  orderType       String   // 'buy' | 'sell'
+  tradeType       String   // 'market' | 'limit'
+  fromCurrency    String   // 'WEICOIN' | 'POINTS' | 'CNY'
+  toCurrency      String   // 'WEICOIN' | 'POINTS' | 'CNY'
+  amount          Float    // 交易数量
+  price           Float?   // 限价单价格
+  totalValue      Float    // 总价值
+  filledAmount    Float    @default(0.0)  // 已成交数量
+  status          String   // 'pending' | 'partial' | 'completed' | 'cancelled'
+  
+  userWeiCoins    UserWeiCoins @relation(fields: [userWeiCoinsId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+  
+  @@index([userWeiCoinsId, status])
+  @@index([orderType, tradeType])
+  @@index([status, createdAt])
+}
+
+// 生态系统奖励表
+model EcosystemReward {
+  id              String   @id @default(uuid())
+  userId          String
+  rewardType      String   // 'referral' | 'content_creation' | 'community_contribution' | 'beta_testing'
+  amount          Float    // 奖励数量
+  description     String   // 奖励描述
+  multiplier      Float    @default(1.0)  // 奖励倍数
+  status          String   // 'pending' | 'distributed' | 'expired'
+  
+  createdAt       DateTime @default(now())
+  distributedAt   DateTime?
+  expiresAt       DateTime?
+  
+  @@index([userId, status])
+  @@index([rewardType])
+  @@index([status, createdAt])
+}
+
+// 充值订单表 - 主要用于积分充值
+model RechargeOrder {
+  id              String   @id @default(uuid())
+  userId          String   // 用户ID
+  orderId         String   @unique // 订单号
+  currency        String   @default("POINTS") // 'POINTS' | 'WEICOIN' | 'CNY'
+  amount          Float    // 充值金额（人民币）或数量
+  targetAmount    Int      // 获得的积分数量（主要）
+  paymentMethod   String   // 支付方式：'wechat' | 'alipay' | 'card'
+  status          String   // 订单状态：'pending' | 'success' | 'failed' | 'cancelled'
+  paymentId       String?  // 第三方支付ID
+  failureReason   String?  // 失败原因
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime? // 完成时间
+  
+  @@index([userId, status])
+  @@index([orderId])
+  @@index([status, createdAt])
+  @@index([currency])
 }
 
 model SmsCode {
@@ -104,6 +301,10 @@ model SmsCode {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // 复合索引优化验证码查询
+  @@index([phone, expiresAt])
+  @@index([expiresAt])
 }
 
 model InviteCode {
@@ -125,4 +326,70 @@ model InviteCode {
   usedByUser  User?    @relation("InviteCodeUsedBy", fields: [usedBy], references: [id])
   // 关联创建者
   createdByUser User?  @relation("InviteCodeCreatedBy", fields: [createdBy], references: [id])
+  
+  // 复合索引优化邀请码验证
+  @@index([code, isActive])
+  @@index([isActive, expiresAt])
+  @@index([createdBy])
+  @@index([usedBy])
+}
+
+// 会话表 - 管理用户的对话会话
+model ChatSession {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String   // 会话标题，取第一个问题的前20个字
+  status      String   @default("active") // 'active' | 'closed'
+  
+  messages    ChatMessage[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, createdAt])
+  @@index([userId, status])
+}
+
+// 对话消息表 - 存储每一轮对话
+model ChatMessage {
+  id          String   @id @default(uuid())
+  sessionId   String
+  userId      String
+  role        String   // 'user' | 'assistant'
+  content     String
+  
+  // 如果是用户消息，包含问题和排盘数据
+  question    String?
+  paipanData  Json?    // 完整的排盘数据，用于前端重现
+  
+  // 如果是AI回复，包含分析结果
+  analysis    Json?    // AI分析结果
+  strategy    String?  // 'DEEP' | 'SIMPLE' | 'STREAM' | 'MASTER'
+  pointsSpent Int?     // 本次消耗的积分
+  
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([sessionId, createdAt])
+  @@index([userId, createdAt])
+}
+
+// 保留原有的分析历史记录表，用于快速统计
+model AnalysisHistory {
+  id          String   @id @default(uuid())
+  userId      String
+  sessionId   String?  // 关联到会话
+  messageId   String?  // 关联到具体消息
+  question    String
+  paipanData  Json
+  analysisResult Json
+  strategy    String   // 'DEEP' | 'SIMPLE' | 'STREAM'
+  pointsSpent Int
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId, createdAt])
+  @@index([sessionId])
+  @@index([strategy])
 }

@@ -27,7 +27,7 @@ const BottomNav = () => {
                   height="24"
                 />
               </div>
-              <span className="nav-text">首页</span>
+              <span className="nav-text">首页1</span>
             </>
           )}
         </NavLink>

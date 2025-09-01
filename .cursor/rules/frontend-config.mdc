@@ -1,23 +1,30 @@
----
-description:
-globs:
-alwaysApply: false
----
-# 丁未奇门遁甲系统 - 前端配置规则
+# 丁未奇门遁甲系统 - 前端配置规则 (双前端版)
 
 ## 🎨 前端技术栈
 
+### Vue.js前端 ([apps/frontend-vue/](mdc:apps/frontend-vue))
 - **框架**: Vue 3 + Composition API
 - **构建工具**: Vite 5.x
-- **UI组件**: Ant Design Vue 4.x
 - **状态管理**: Pinia
 - **路由**: Vue Router 4.x
 - **HTTP客户端**: Axios
+- **移动端**: Capacitor 7.x
+- **版本**: 1.0.1750352961 (生产就绪)
+
+### React前端 ([apps/frontend-react/](mdc:apps/frontend-react))
+- **框架**: React 18 + Hooks
+- **构建工具**: Vite 5.x
+- **状态管理**: Redux Toolkit
+- **路由**: React Router
+- **HTTP客户端**: Axios
+- **移动端**: Capacitor 6.x
+- **版本**: 0.0.0 (完整迁移版，生产就绪)
 
 ## 📁 前端目录结构
 
+### Vue.js前端结构
 ```
-frontend/
+apps/frontend-vue/
 ├── src/
 │   ├── App.vue              # 主应用组件
 │   ├── main.js              # 应用入口
@@ -26,9 +33,62 @@ frontend/
 │   │   ├── mobile-http.js   # 移动端HTTP处理
 │   │   └── qimenApi.js      # 奇门遁甲API
 │   ├── views/               # 页面组件
+│   │   ├── HomeView.vue     # 首页
+│   │   ├── QimenView.vue    # 奇门遁甲页面
+│   │   ├── HistoryView.vue  # 历史记录
+│   │   └── FavoritesView.vue # 收藏夹
 │   ├── components/          # 通用组件
+│   │   ├── Header.vue       # 页面头部
+│   │   ├── QimenDisk3D.vue  # 3D奇门盘
+│   │   └── StreamAnalysis.vue # 流式分析
 │   ├── router/              # 路由配置
+│   │   └── index.js         # 路由定义
 │   └── stores/              # Pinia状态管理
+│       ├── auth.js          # 认证状态
+│       ├── theme.js         # 主题状态
+│       └── qimenInfoStore.js # 奇门信息状态
+├── ios/                     # iOS移动端配置
+├── vite.config.js           # Vite配置
+├── capacitor.config.ts      # 移动端打包配置
+└── package.json             # 依赖管理
+```
+
+### React前端结构
+```
+apps/frontend-react/
+├── src/
+│   ├── App.jsx              # 主应用组件
+│   ├── main.jsx             # 应用入口
+│   ├── services/            # API服务
+│   │   └── api.js           # API配置中心
+│   ├── pages/               # 页面组件
+│   │   ├── HomePage.jsx     # 首页
+│   │   ├── QimenPage.jsx    # 奇门遁甲页面
+│   │   ├── HistoryPage.jsx  # 历史记录
+│   │   └── FavoritesPage.jsx # 收藏夹
+│   ├── components/          # 通用组件
+│   │   ├── layout/          # 布局组件
+│   │   │   ├── Header.jsx   # 页面头部
+│   │   │   └── BottomNav.jsx # 底部导航
+│   │   ├── common/          # 通用组件
+│   │   │   ├── Button.jsx   # 按钮组件
+│   │   │   ├── Input.jsx    # 输入组件
+│   │   │   └── Modal.jsx    # 模态框
+│   │   └── QimenItem.jsx    # 奇门项组件
+│   ├── hooks/               # 自定义Hooks
+│   │   ├── useAuth.js       # 认证Hook
+│   │   ├── useApi.js        # API调用Hook
+│   │   └── useQimen.js      # 奇门逻辑Hook
+│   ├── stores/              # Redux状态管理
+│   │   ├── store.js         # Store配置
+│   │   ├── authSlice.js     # 认证切片
+│   │   ├── themeSlice.js    # 主题切片
+│   │   └── qimenSlice.js    # 奇门切片
+│   └── utils/               # 工具函数
+│       ├── api.js           # API工具
+│       └── qimenApi.js      # 奇门API
+├── android/                 # Android移动端配置
+├── ios/                     # iOS移动端配置
 ├── vite.config.js           # Vite配置
 ├── capacitor.config.ts      # 移动端打包配置
 └── package.json             # 依赖管理
@@ -36,8 +96,7 @@ frontend/
 
 ## 🌐 API配置中心
 
-### API基础配置 ([utils/api.js](mdc:frontend/src/utils/api.js))
-
+### Vue前端API配置 ([apps/frontend-vue/src/utils/api.js](mdc:apps/frontend-vue/src/utils/api.js))
 ```javascript
 // 智能环境检测
 const getApiBaseUrl = () => {
@@ -48,162 +107,253 @@ const getApiBaseUrl = () => {
   
   // Web端本地开发使用代理
   if (isLocalDev) {
-    return ''; // 空字符串使用Vite代理
+    return '/api';
   }
   
-  // 其他情况使用服务器
+  // 生产环境使用服务器
   return 'http://101.201.148.8:3001';
 };
-```
 
-### API端点配置
-```javascript
-export const API_ENDPOINTS = {
-  // 认证系统
-  AUTH_LOGIN: `${API_BASE_URL}/api/auth/login`,
-  AUTH_REGISTER: `${API_BASE_URL}/api/auth/register`,
-  AUTH_PROFILE: `${API_BASE_URL}/api/auth/profile`,
-  
-  // 积分系统
-  POINTS_GET: `${API_BASE_URL}/api/points`,
-  POINTS_TRANSACTION: `${API_BASE_URL}/api/points/transaction`,
-  
-  // 签到系统
-  CHECKIN_STATUS: `${API_BASE_URL}/api/checkin/status`,
-  CHECKIN_DO: `${API_BASE_URL}/api/checkin`,
-  
-  // 奇门遁甲
-  QIMEN_PAIPAN: `${API_BASE_URL}/api/qimen/paipan`,
-  QIMEN_ANALYSIS: `${API_BASE_URL}/api/analysis/qimen`,
-  QIMEN_ANALYSIS_STREAM: `${API_BASE_URL}/api/analysis/qimen/stream`,
-  
-  // 健康检查
-  HEALTH_CHECK: `${API_BASE_URL}/health`
-};
-```
-
-## 🔧 Vite配置 ([vite.config.js](mdc:frontend/vite.config.js))
-
-### 开发代理配置
-```javascript
-export default defineConfig({
-  server: {
-    host: '0.0.0.0',
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false
-      },
-      '/health': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false
-      }
-    }
+// Axios实例配置
+const apiClient = axios.create({
+  baseURL: getApiBaseUrl(),
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json'
   }
-})
+});
 ```
 
-### 代理工作原理
-- **前端请求**: `http://localhost:5173/api/auth/login`
-- **代理转发**: `http://localhost:3001/api/auth/login`
-- **避免CORS**: 开发环境无跨域问题
+### React前端API配置 ([apps/frontend-react/src/services/api.js](mdc:apps/frontend-react/src/services/api.js))
+```javascript
+// 环境配置
+const API_CONFIG = {
+  development: {
+    baseURL: import.meta.env.VITE_FORCE_MOBILE_API === 'true' 
+      ? import.meta.env.VITE_API_BASE_URL 
+      : '/api',
+    timeout: 30000
+  },
+  production: {
+    baseURL: 'http://101.201.148.8:3001',
+    timeout: 30000
+  }
+};
+
+// API客户端
+const apiClient = axios.create({
+  ...API_CONFIG[import.meta.env.MODE || 'development'],
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+```
 
 ## 📱 移动端配置
 
-### Capacitor配置 ([capacitor.config.ts](mdc:frontend/capacitor.config.ts))
+### Vue前端移动端配置
 ```typescript
+// apps/frontend-vue/capacitor.config.ts
+import { CapacitorConfig } from '@capacitor/cli';
+
 const config: CapacitorConfig = {
-  appId: 'com.guigu.qimen',
+  appId: 'com.guiguqimen.app.1750352961',
   appName: '丁未奇门遁甲',
   webDir: 'dist',
   server: {
     androidScheme: 'https'
+  },
+  ios: {
+    scheme: 'App'
   }
 };
+
+export default config;
 ```
 
-### 移动端API处理
-- **自动检测**: 移动端环境自动使用服务器地址
-- **网络优化**: 专门的移动端HTTP处理 ([mobile-http.js](mdc:frontend/src/utils/mobile-http.js))
-- **错误重试**: 智能重试机制和备用服务器
+### React前端移动端配置
+```typescript
+// apps/frontend-react/capacitor.config.ts
+import { CapacitorConfig } from '@capacitor/cli';
 
-## 🚀 开发启动
+const config: CapacitorConfig = {
+  appId: 'com.guiguqimen.react.app',
+  appName: '丁未奇门遁甲 React',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https'
+  },
+  ios: {
+    scheme: 'App'
+  }
+};
 
-### 本地开发
+export default config;
+```
+
+## 🚀 开发启动方式
+
+### 使用统一启动脚本 (推荐)
 ```bash
-cd frontend
-npm install
-npm run dev
+# 启动开发环境
+./start-dev.sh start
+
+# 选择启动模式:
+# 2) 后端 + Vue前端 (端口3001 + 5173)
+# 3) 后端 + React前端 (端口3001 + 5174)
+# 4) 完整启动 (后端 + 两个前端)
 ```
 
-### 移动端开发
+### 手动启动各前端
+
+#### Vue前端启动
 ```bash
-# Android
-npm run android
-
-# iOS  
-npm run ios
+cd apps/frontend-vue
+npm install                    # 安装依赖
+npm run dev                   # 开发环境 (http://localhost:5173)
+npm run build                 # 生产构建
+npm run preview               # 预览构建结果
 ```
+
+#### React前端启动
+```bash
+cd apps/frontend-react
+npm install                   # 安装依赖
+npm run dev                  # 开发环境 (http://localhost:5174)
+npm run build                # 生产构建
+npm run preview              # 预览构建结果
+```
+
+## 📱 移动端构建
+
+### Vue前端移动端
+```bash
+cd apps/frontend-vue
+
+# iOS构建
+npm run build:mobile          # 构建Web资源
+npx cap sync ios             # 同步到iOS
+npx cap open ios             # 打开Xcode
+
+# Android构建  
+npm run build:mobile          # 构建Web资源
+npx cap sync android         # 同步到Android
+npx cap open android         # 打开Android Studio
+```
+
+### React前端移动端
+```bash
+cd apps/frontend-react
+
+# 移动端专用构建
+npm run build:mobile          # 使用移动端配置构建
+
+# iOS构建
+npx cap sync ios
+npx cap open ios
+
+# Android构建
+npx cap sync android
+npx cap open android
+```
+
+## 🎯 功能特性对比
+
+| 功能特性 | Vue前端 | React前端 | 说明 |
+|---------|---------|-----------|------|
+| 奇门遁甲排盘 | ✅ | ✅ | 完整实现 |
+| AI智能分析 | ✅ | ✅ | 三种分析模式 |
+| 用户认证 | ✅ | ✅ | JWT认证 |
+| 历史记录 | ✅ | ✅ | 自动保存 |
+| 收藏夹 | ✅ | ✅ | 备注管理 |
+| 3D奇门盘 | ✅ | ❌ | Vue独有 |
+| 流式分析 | ✅ | ✅ | 实时分析 |
+| 移动端优化 | ✅ | ✅ | 双端支持 |
+| PWA支持 | ✅ | ✅ | 离线功能 |
+| 主题切换 | ✅ | ✅ | 暗黑模式 |
+
+## 🔧 开发配置
+
+### 环境变量配置
+
+#### Vue前端环境变量
+```bash
+# apps/frontend-vue/.env
+VITE_API_BASE_URL=http://localhost:3001
+VITE_APP_TITLE=丁未奇门遁甲
+
+# apps/frontend-vue/.env.production
+VITE_API_BASE_URL=http://101.201.148.8:3001
+VITE_APP_TITLE=丁未奇门遁甲
+```
+
+#### React前端环境变量
+```bash
+# apps/frontend-react/.env
+VITE_API_BASE_URL=http://localhost:3001
+VITE_FORCE_MOBILE_API=false
+
+# apps/frontend-react/.env.production
+VITE_API_BASE_URL=http://101.201.148.8:3001
+VITE_FORCE_MOBILE_API=true
+VITE_BUILD_TARGET=mobile
+```
+
+## 🎨 UI设计规范
+
+### 设计主题
+- **配色方案**: 黑金主题，神秘奇门风格
+- **字体**: STXihei，传统中文字体
+- **图标**: Lucide图标库
+- **动画**: GSAP动画库
+- **响应式**: 移动优先设计
+
+### 组件规范
+- **Button**: 统一的按钮样式和交互
+- **Input**: 标准化输入组件
+- **Modal**: 模态框统一规范
+- **Card**: 卡片式内容展示
+- **Navigation**: 底部导航栏
+
+## 🔍 调试和开发工具
+
+### Vue前端调试
+- **Vue DevTools**: 浏览器扩展
+- **Vite HMR**: 热模块替换
+- **ESLint**: 代码规范检查
+- **Prettier**: 代码格式化
+
+### React前端调试
+- **React DevTools**: 浏览器扩展
+- **Redux DevTools**: 状态管理调试
+- **Vite HMR**: 热模块替换
+- **ESLint**: 代码规范检查
+
+## 🚀 部署配置
 
 ### 生产构建
 ```bash
-npm run build
+# Vue前端生产构建
+cd apps/frontend-vue && npm run build
+
+# React前端生产构建
+cd apps/frontend-react && npm run build
 ```
 
-## 🎯 页面路由
+### Nginx配置示例
+```nginx
+# Vue前端
+location /vue {
+    alias /path/to/apps/frontend-vue/dist;
+    try_files $uri $uri/ /vue/index.html;
+}
 
-### 主要页面
-- `/home` - 首页
-- `/qimen` - 奇门遁甲分析
-- `/profile` - 用户中心
-- `/about` - 关于页面
-
-### 路由配置
-参考 [router/](mdc:frontend/src/router) 目录下的路由配置文件。
-
-## 🔐 认证状态管理
-
-### Token管理
-- 登录成功后自动存储token
-- 请求拦截器自动添加Authorization头
-- Token过期自动跳转登录页
-
-### 用户状态
-使用Pinia管理用户登录状态和积分信息。
-
-## 📊 性能优化
-
-### 缓存策略
-- API响应缓存
-- 图片资源懒加载
-- 组件按需加载
-
-### 移动端优化
-- 专门的移动端性能管理器
-- 内存管理和页面可见性检测
-- 网络状态检测和离线处理
-
-## 🛠️ 开发工具
-
-### 调试工具
-- Vue DevTools
-- PageSpy (生产环境监控)
-- Vite开发服务器热重载
-
-### 代码规范
-- ESLint配置
-- Vue 3 Composition API最佳实践
-- TypeScript支持
-
-## 📝 常见问题
-
-### API调用失败
-1. 检查后端服务是否启动 (`node backend/app.js`)
-2. 确认代理配置正确
-3. 检查网络连接和防火墙设置
+# React前端
+location /react {
+    alias /path/to/apps/frontend-react/dist;
+    try_files $uri $uri/ /react/index.html;
+}
+```
 
 ### 移动端问题
 1. 确保服务器地址可访问

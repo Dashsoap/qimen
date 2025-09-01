@@ -10,7 +10,7 @@ export const loginUser = createAsyncThunk(
       const { token, user } = response.data;
       
       // 保存token到localStorage
-      localStorage.setItem('token', token);
+      localStorage.setItem('auth-token', token);
       
       return { token, user };
     } catch (error) {
@@ -28,7 +28,7 @@ export const registerUser = createAsyncThunk(
       const { token, user } = response.data;
       
       // 保存token到localStorage
-      localStorage.setItem('token', token);
+      localStorage.setItem('auth-token', token);
       
       return { token, user };
     } catch (error) {
@@ -40,14 +40,14 @@ export const registerUser = createAsyncThunk(
 // 异步thunk - 登出
 export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
-  async (_, { rejectWithValue }) => {
+  async () => {
     try {
       await axios.post('/api/auth/logout');
-      localStorage.removeItem('token');
+      localStorage.removeItem('auth-token');
       return null;
-    } catch (error) {
+    } catch {
       // 即使请求失败也要清除本地token
-      localStorage.removeItem('token');
+      localStorage.removeItem('auth-token');
       return null;
     }
   }
@@ -58,7 +58,7 @@ export const verifyToken = createAsyncThunk(
   'auth/verifyToken',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth-token');
       if (!token) {
         throw new Error('没有找到token');
       }
@@ -68,8 +68,8 @@ export const verifyToken = createAsyncThunk(
       });
       
       return { token, user: response.data.user };
-    } catch (error) {
-      localStorage.removeItem('token');
+    } catch {
+      localStorage.removeItem('auth-token');
       return rejectWithValue('token验证失败');
     }
   }
@@ -77,7 +77,7 @@ export const verifyToken = createAsyncThunk(
 
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
+  token: localStorage.getItem('auth-token'),
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -95,7 +95,7 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
-      localStorage.removeItem('token');
+      localStorage.removeItem('auth-token');
     },
   },
   extraReducers: (builder) => {

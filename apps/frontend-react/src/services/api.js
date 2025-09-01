@@ -11,7 +11,7 @@ const getApiBaseUrl = () => {
 // 创建axios实例
 const api = axios.create({
   baseURL: getApiBaseUrl(),
-  timeout: 10000,
+  timeout: 30000, // 延长到30秒，适配专业分析模式
   headers: {
     'Content-Type': 'application/json',
   },

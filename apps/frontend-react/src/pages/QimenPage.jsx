@@ -167,8 +167,8 @@ const QimenPage = () => {
         paipan();
       }
       
-      if (streamAnalysisRef.current && streamAnalysisRef.current.startStreamAnalysis) {
-        await streamAnalysisRef.current.startStreamAnalysis();
+      if (streamAnalysisRef.current && streamAnalysisRef.current.startAnalysis) {
+        await streamAnalysisRef.current.startAnalysis();
       } else {
         console.error('❌ StreamAnalysis组件未找到或方法不存在');
         throw new Error('流式分析组件加载失败');
@@ -184,15 +184,18 @@ const QimenPage = () => {
 
   // 手动分析函数 - 1:1复刻Vue版本
   const manualAnalyze = async (questionText = null) => {
-    const currentQuestion = questionText || question?.trim();
+    // 确保questionText是字符串类型，过滤掉事件对象
+    const validQuestionText = (typeof questionText === 'string' && questionText.trim()) ? questionText.trim() : null;
+    const currentQuestion = validQuestionText || question?.trim();
+    
     if (!currentQuestion) {
       alert('请先输入占卜问题');
       return;
     }
     
-    // 如果传入了问题文本，更新状态
-    if (questionText) {
-      setQuestion(questionText);
+    // 如果传入了有效的问题文本，更新状态
+    if (validQuestionText) {
+      setQuestion(validQuestionText);
     }
     
     await analyze();
@@ -295,7 +298,7 @@ const QimenPage = () => {
         {/* 功能按钮 - 1:1复刻Vue版本 */}
         <div className="function-buttons">
           <button 
-            onClick={manualAnalyze}
+            onClick={() => manualAnalyze()}
             className="function-btn analyze-btn"
             disabled={loading}
             title="立即分析"
