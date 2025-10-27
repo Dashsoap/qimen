@@ -137,35 +137,35 @@ export default function QimenPage() {
         <table className="qimen-table">
           <tbody>
             <tr className="row">
-              <td className="col palace" data-name="坎宫" onClick={() => showPalaceInfoHandler('坎宫')}>
+              <td className="col palace" data-name="巽宫" onClick={() => showPalaceInfoHandler('巽宫')}>
                 <QimenItem index="四" />
               </td>
-              <td className="col palace" data-name="艮宫" onClick={() => showPalaceInfoHandler('艮宫')}>
+              <td className="col palace" data-name="离宫" onClick={() => showPalaceInfoHandler('离宫')}>
                 <QimenItem index="九" />
               </td>
-              <td className="col palace" data-name="震宫" onClick={() => showPalaceInfoHandler('震宫')}>
+              <td className="col palace" data-name="坤宫" onClick={() => showPalaceInfoHandler('坤宫')}>
                 <QimenItem index="二" />
               </td>
             </tr>
             <tr className="row">
-              <td className="col palace" data-name="坤宫" onClick={() => showPalaceInfoHandler('坤宫')}>
+              <td className="col palace" data-name="震宫" onClick={() => showPalaceInfoHandler('震宫')}>
                 <QimenItem index="三" />
               </td>
               <td className="col palace center" data-name="中宫" onClick={() => showPalaceInfoHandler('中宫')}>
                 <QimenItem index="五" />
               </td>
-              <td className="col palace" data-name="巽宫" onClick={() => showPalaceInfoHandler('巽宫')}>
+              <td className="col palace" data-name="兑宫" onClick={() => showPalaceInfoHandler('兑宫')}>
                 <QimenItem index="七" />
               </td>
             </tr>
             <tr className="row">
-              <td className="col palace" data-name="兑宫" onClick={() => showPalaceInfoHandler('兑宫')}>
+              <td className="col palace" data-name="艮宫" onClick={() => showPalaceInfoHandler('艮宫')}>
                 <QimenItem index="八" />
               </td>
-              <td className="col palace" data-name="乾宫" onClick={() => showPalaceInfoHandler('乾宫')}>
+              <td className="col palace" data-name="坎宫" onClick={() => showPalaceInfoHandler('坎宫')}>
                 <QimenItem index="一" />
               </td>
-              <td className="col palace" data-name="离宫" onClick={() => showPalaceInfoHandler('离宫')}>
+              <td className="col palace" data-name="乾宫" onClick={() => showPalaceInfoHandler('乾宫')}>
                 <QimenItem index="六" />
               </td>
             </tr>

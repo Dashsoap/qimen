@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">云丁未奇门遁甲 V1.0.2</string>
-    <string name="title_activity_main">云丁未奇门遁甲 V1.0.2</string>
-    <string name="package_name">com.guiguqimen.react.app</string>
-    <string name="custom_url_scheme">com.guiguqimen.react.app</string>
-</resources>
