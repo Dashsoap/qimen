@@ -8,6 +8,7 @@ import { createConfig } from './src/config/AppConfig.js';
 import { createPointsService } from './src/services/PointsService.js';
 import { createAIService } from './src/services/AIService.js';
 import { createInviteCodeService } from './src/services/InviteCodeService.js';
+import { createAuthService } from './src/services/AuthService.js';
 import { configureMiddlewares } from './src/middleware/index.js';
 
 // 导入控制器
@@ -64,7 +65,8 @@ class QimenServer {
       this.services = {
         pointsService: createPointsService(this.prisma),
         aiService: createAIService(),
-        inviteCodeService: createInviteCodeService(this.prisma)
+        inviteCodeService: createInviteCodeService(this.prisma),
+        authService: createAuthService(this.prisma, this.config, createInviteCodeService(this.prisma))
       };
       
       // 5. 配置中间件
@@ -74,12 +76,7 @@ class QimenServer {
       // 6. 初始化控制器
       console.log('🎮 初始化控制器...');
       this.controllers = {
-        authController: createAuthController(
-          this.prisma, 
-          this.config, 
-          this.services.inviteCodeService, 
-          this.services.pointsService
-        ),
+        authController: createAuthController(this.services.authService),
         pointsController: createPointsController(this.services.pointsService),
         analysisController: createAnalysisController(
           this.services.aiService,

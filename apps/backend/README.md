@@ -1,364 +1,204 @@
-# 🔮 丁未奇门遁甲后端服务
+# 🔮 丁未奇门遁甲 - 后端服务（重构版 v2.5）
 
-基于Agent模式的智能奇门遁甲分析系统，集成豆包AI（DeepSeek-R1）、MCP工具链和专业知识库。
+现代化、模块化的奇门遁甲智能分析系统后端服务。采用最佳工程实践，提供高性能、易维护的API服务。
 
-## 🌟 核心特性
+[![Node](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Status](https://img.shields.io/badge/Status-Production-brightgreen.svg)]()
+[![Architecture](https://img.shields.io/badge/Architecture-Modular-blue.svg)]()
 
-### 🤖 AI Agent 架构
-- **多步骤推理**：排盘解析 → 符号查询 → 组合分析 → 智能解答
-- **豆包AI驱动**：使用火山引擎豆包API (DeepSeek-R1-250528模型)
-- **专业知识库**：内置八门、九星、八神等传统奇门遁甲符号体系
-- **智能工具调用**：通过MCP协议调用专业分析工具
+## ✨ 重构亮点（v2.5）
 
-### 🔧 MCP工具集
-- `query_symbol_meaning` - 查询符号含义
-- `search_combinations` - 搜索组合解释
-- `calculate_wuxing` - 五行生克制化分析
-- `find_similar_cases` - 历史案例检索
-- `get_time_energy` - 时间能量分析
+### 🏗️ 架构升级
+- **策略模式**: AI分析采用可扩展的策略模式设计
+- **关注点分离**: Controller-Service-Utils三层架构
+- **模块化设计**: 所有核心模块独立、可复用
+- **代码精简**: 核心模块代码减少60-80%
 
-### 📚 数据库系统
-- **符号库**：八门、九星、八神、天干、地支
-- **组合库**：符号组合的传统解释
-- **历史库**：AI分析历史和用户反馈
-- **知识库**：奇门遁甲理论文献
-
-## 🚀 快速开始
-
-### 1. 环境准备
-```bash
-cd backend
-npm install
+### 📦 模块化组织
 ```
-
-### 2. 配置API密钥
-编辑 `config.env` 文件：
-```env
-# 豆包 AI 配置 (火山引擎)
-ARK_API_KEY=847716db-7e9f-4cef-8dbd-8c4d25f23d5a
-ARK_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
-ARK_MODEL=deepseek-r1-250528
+src/
+├── services/           # 业务逻辑层
+│   ├── ai/            # AI分析策略（5个独立策略类）
+│   ├── AIService.js   # AI服务协调器
+│   ├── AuthService.js # 认证业务逻辑
+│   └── ...
+├── controllers/        # HTTP请求处理层
+│   ├── AuthController.js
+│   ├── AnalysisController.js
+│   └── ...
+├── middleware/         # 中间件模块
+│   ├── auth.js        # JWT认证
+│   ├── rateLimit.js   # 限流策略
+│   ├── security.js    # 安全配置
+│   └── ...
+├── validation/         # 数据验证模块
+├── utils/             # 工具函数库
+│   ├── responseFormatter.js
+│   ├── errorHandler.js
+│   ├── timeHelper.js
+│   ├── paipanHelper.js
+│   └── logger.js
+└── prompts/           # AI提示词模块
 ```
-
-### 3. 初始化数据库
-```bash
-npm run init-db
-```
-
-### 4. 启动服务
-```bash
-# 开发模式
-npm run dev
-
-# 生产模式
-npm start
-```
-
-## 📡 API接口
-
-### 🔮 分析接口
-
-#### POST `/api/analysis/qimen`
-完整的丁未奇门遁甲分析
-```json
-{
-  "question": "我最近的事业运势如何？",
-  "paipanData": {
-    "宫1": {
-      "八门": "开门",
-      "九星": "天心星",
-      "八神": "值符"
-    }
-  },
-  "sessionId": "optional-session-id"
-}
-```
-
-#### POST `/api/analysis/quick`
-快速分析（简化版）
-```json
-{
-  "question": "今天适合投资吗？",
-  "paipanData": { /* 排盘数据 */ }
-}
-```
-
-### 🎯 排盘接口
-
-#### POST `/api/qimen/paipan`
-自动排盘（使用当前时间）
-```json
-{
-  "question": "关于感情的问题",
-  "customTime": "2024-01-01T12:00:00Z" // 可选
-}
-```
-
-### 📚 知识库接口
-
-#### GET `/api/qimen/symbols?type=bamen`
-获取符号列表
-
-#### GET `/api/qimen/knowledge?q=奇门遁甲&category=基础理论`
-搜索知识库
-
-## 🏗️ 项目架构
-
-```
-backend/
-├── src/
-│   ├── agents/          # AI Agent核心
-│   │   └── QimenAgent.js
-│   ├── database/        # 数据库管理
-│   │   └── init.js
-│   ├── mcp/            # MCP工具服务
-│   │   ├── MCPServer.js
-│   │   └── QimenTools.js
-│   ├── routes/         # API路由
-│   │   ├── analysis.js
-│   │   └── qimen.js
-│   └── services/       # 业务服务
-├── data/               # 数据库文件
-├── logs/               # 日志文件
-└── scripts/            # 脚本工具
-```
-
-## 🔍 工作流程
-
-### 1. AI分析流程
-```
-用户问题 → 自动排盘 → AI Agent分析
-    ↓
-排盘解析 → 符号查询 → 组合分析 → 生成回答
-    ↓
-保存历史 → 返回结果
-```
-
-### 2. MCP工具调用
-```
-AI Agent → MCP Server → 专业工具 → 数据库查询
-    ↓
-工具结果 → 日志记录 → 返回Agent
-```
-
-## 🌐 服务状态
-
-访问以下地址查看服务状态：
-- 主服务：`http://localhost:3001/health`
-- MCP服务器：`http://localhost:3002/status`
-
-## 🔧 开发指南
-
-### 添加新的分析工具
-1. 在 `QimenTools.js` 中注册新工具
-2. 实现工具逻辑
-3. 更新 `MCPServer.js` 参数定义
-
-### 扩展符号数据库
-1. 修改 `init.js` 中的 `seedBasicData` 函数
-2. 添加新的符号类型和含义
-3. 重新运行 `npm run init-db`
-
-### 自定义AI提示词
-在 `QimenAgent.js` 中修改各步骤的 `systemPrompt`
-
-## 📊 监控和日志
-
-- 分析历史：存储在 `analysis_history` 表
-- 工具调用：记录在 `mcp_tool_logs` 表  
-- 用户反馈：通过 `/api/analysis/feedback` 收集
-- 统计数据：通过 `/api/analysis/stats` 查看
-
-## 🔒 安全特性
-
-- API密钥环境变量管理
-- CORS跨域保护
-- 请求参数验证
-- 错误信息脱敏
-
-## 🤝 贡献指南
-
-1. Fork 项目
-2. 创建特性分支
-3. 提交更改
-4. 推送到分支
-5. 创建 Pull Request
-
-## 📄 许可证
-
-MIT License
-
----
-
-**🔮 愿奇门遁甲的古老智慧，在AI的加持下，为现代人指引方向！** 
-
-# 🔮 丁未奇门遁甲遁甲 - 后端服务
-
-完整版奇门遁甲应用的后端服务，提供用户认证、AI智能解盘、历史记录管理和收藏夹功能。
 
 ## 🚀 核心功能
 
 ### 1. 用户认证系统
-- **注册/登录**: JWT令牌认证，bcrypt密码加密
-- **积分系统**: 注册送1000积分，AI分析消费100积分
-- **用户资料**: 完整的用户档案管理
-- **订阅管理**: 支持多种会员计划
+- JWT令牌认证，bcrypt密码加密
+- 邀请码注册机制
+- 积分系统（注册送1000积分）
+- SMS快捷登录支持
 
-### 2. AI智能解盘
-- **流式分析**: 实时响应的AI奇门遁甲分析
-- **深度学习**: 基于SophNet DeepSeek-R1模型
-- **专业解读**: 传统易学与现代AI的完美结合
-- **排盘解析**: 自动解析奇门遁甲排盘数据
+### 2. AI智能分析
+采用**策略模式**，支持多种分析方式：
 
-### 3. 历史记录系统 ⭐
-- **自动保存**: AI分析完成后自动保存历史记录
-- **搜索功能**: 支持按问题内容和标签搜索
-- **分页查询**: 高效的数据分页加载
-- **详情查看**: 完整的分析结果展示
-- **记录管理**: 支持删除不需要的历史记录
+| 策略 | 描述 | Token | 适用场景 |
+|------|------|-------|---------|
+| **Simple** | 快速分析 | 1000 | 日常咨询 |
+| **Deep** | 深度解读 | 2000 | 重要决策 |
+| **Stream** | 流式输出 | 2000 | 实时交互 |
+| **Master** | 大师解盘 | 3000 | 专业分析 |
 
-### 4. 收藏夹功能 ⭐
-- **智能收藏**: 一键收藏重要的分析结果
-- **备注管理**: 为每个收藏添加个人备注
-- **快速访问**: 便捷的收藏记录浏览
-- **收藏同步**: 实时更新收藏状态
-- **批量管理**: 高效的收藏记录管理
+### 3. 数据管理
+- 历史记录自动保存
+- 收藏夹智能管理
+- 搜索和分页查询
+- 标签分类系统
 
-## 📊 数据库模型
+### 4. 差异化限流
+基于用户等级的智能限流：
+- **VIP用户**: 10次/分钟
+- **高级用户**: 5次/分钟  
+- **普通用户**: 2次/分钟
 
-### 新增模型
+## 📡 API文档
 
-#### QimenRecord (历史记录)
-```prisma
-model QimenRecord {
-  id          String   @id @default(uuid())
-  userId      String   // 用户ID
-  question    String   // 用户问题
-  paipanData  String   // 排盘数据(JSON)
-  analysis    String   // AI分析结果
-  tags        String?  // 标签(逗号分隔)
-  
-  user        User     @relation(fields: [userId], references: [id])
-  favorites   QimenFavorite[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([userId, createdAt])
+### 认证接口
+
+#### 用户注册
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123",
+  "phone": "13800138000",
+  "inviteCode": "INVITE123"
 }
 ```
 
-#### QimenFavorite (收藏夹)
-```prisma
-model QimenFavorite {
-  id          String   @id @default(uuid())
-  userId      String   // 用户ID
-  recordId    String   // 记录ID
-  note        String?  // 收藏备注
-  
-  user        User     @relation(fields: [userId], references: [id])
-  record      QimenRecord @relation(fields: [recordId], references: [id])
-  
-  createdAt   DateTime @default(now())
-  
-  @@unique([userId, recordId])
-  @@index([userId, createdAt])
+#### 用户登录
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "testuser",
+  "password": "password123"
 }
 ```
 
-## 🔗 API接口
+### AI分析接口
 
-### 历史记录API
+#### 简单分析
+```http
+POST /api/analysis/simple
+Authorization: Bearer {token}
+Content-Type: application/json
 
-#### 获取历史记录列表
+{
+  "question": "今天的财运如何？",
+  "paipanData": {
+    "排局": "阴遁二局",
+    "干支": "甲子年 丙寅月 戊辰日",
+    "九宫格局": { /* ... */ }
+  }
+}
+```
+
+#### 流式分析（Server-Sent Events）
+```http
+POST /api/analysis/stream
+Authorization: Bearer {token}
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  "question": "事业发展方向如何？",
+  "paipanData": { /* ... */ }
+}
+```
+
+#### 大师解盘
+```http
+POST /api/analysis/master
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "question": "婚姻感情运势？",
+  "paipanData": { /* ... */ }
+}
+```
+
+### 历史记录接口
+
+#### 获取历史列表
 ```http
 GET /api/qimen/history?page=1&limit=20&search=关键词
 Authorization: Bearer {token}
 ```
 
-**响应示例:**
-```json
-{
-  "success": true,
-  "data": {
-    "records": [
-      {
-        "id": "uuid",
-        "question": "今日运势如何？",
-        "analysis": "AI分析结果...",
-        "paipanData": {...},
-        "isFavorited": true,
-        "createdAt": "2024-01-01T12:00:00Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 20,
-      "total": 100,
-      "pages": 5
-    }
-  }
-}
-```
-
-#### 获取历史记录详情
+#### 收藏管理
 ```http
-GET /api/qimen/history/{id}
-Authorization: Bearer {token}
-```
-
-#### 删除历史记录
-```http
-DELETE /api/qimen/history/{id}
-Authorization: Bearer {token}
-```
-
-### 收藏夹API
-
-#### 获取收藏列表
-```http
-GET /api/qimen/favorites?page=1&limit=20
-Authorization: Bearer {token}
-```
-
-#### 添加收藏
-```http
+# 添加收藏
 POST /api/qimen/favorites
-Authorization: Bearer {token}
-Content-Type: application/json
-
 {
-  "recordId": "uuid",
-  "note": "重要的分析结果"
+  "recordId": "record-uuid",
+  "note": "重要的分析"
 }
-```
 
-#### 取消收藏
-```http
+# 取消收藏
 DELETE /api/qimen/favorites/{recordId}
-Authorization: Bearer {token}
 ```
 
-#### 更新收藏备注
+### 积分系统
 ```http
-PUT /api/qimen/favorites/{recordId}
+# 获取积分余额
+GET /api/points/balance
 Authorization: Bearer {token}
-Content-Type: application/json
 
-{
-  "note": "更新后的备注"
-}
+# 积分历史
+GET /api/points/history?page=1&limit=20
+Authorization: Bearer {token}
 ```
 
 ## 🛠 技术栈
 
-- **运行时**: Node.js 18+
-- **框架**: Express.js
-- **数据库**: SQLite + Prisma ORM
-- **认证**: JWT + bcrypt
-- **AI服务**: SophNet DeepSeek-R1
-- **安全**: Helmet + Rate Limiting
-- **API**: RESTful + SSE(流式)
+### 核心框架
+- **Node.js 18+**: JavaScript运行时
+- **Express.js**: Web框架
+- **Prisma**: 现代ORM
+- **SQLite**: 嵌入式数据库
+
+### AI服务
+- **Provider**: SophNet
+- **Model**: DeepSeek-R1
+- **Features**: 流式输出、上下文管理
+
+### 安全与性能
+- **JWT**: 令牌认证
+- **bcrypt**: 密码加密（12轮）
+- **Helmet**: 安全头
+- **express-rate-limit**: 智能限流
+- **CORS**: 跨域控制
+
+### 工具库
+- **Joi**: 数据验证
+- **date-fns**: 时间处理
+- **compression**: gzip压缩
 
 ## 🚀 快速开始
 
@@ -366,114 +206,327 @@ Content-Type: application/json
 - Node.js 18+
 - npm 或 yarn
 
-### 安装依赖
+### 1. 安装依赖
 ```bash
+cd apps/backend
 npm install
 ```
 
-### 环境配置
-创建 `config.env` 文件:
+### 2. 环境配置
+创建 `config.env`:
 ```env
 # 数据库
 DATABASE_URL="file:./dev.db"
 
-# JWT密钥
-JWT_SECRET="your-super-secret-jwt-key"
+# JWT配置
+JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 JWT_EXPIRES_IN="7d"
 
-# AI服务配置
+# AI服务（SophNet DeepSeek-R1）
 ARK_API_KEY="your-api-key"
 ARK_BASE_URL="https://www.sophnet.com/api/open-apis/v1"
 ARK_MODEL="DeepSeek-R1"
 
-# 服务器配置
+# 服务器
 PORT=3001
+NODE_ENV="development"
+
+# 加密
 BCRYPT_ROUNDS=12
+
+# CORS（生产环境需配置白名单）
+ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173"
 ```
 
-### 数据库初始化
+### 3. 数据库初始化
 ```bash
 # 生成Prisma客户端
 npx prisma generate
 
-# 推送数据库schema
+# 创建数据库表
 npx prisma db push
+
+# （可选）查看数据库
+npx prisma studio
 ```
 
-### 启动服务
+### 4. 生成邀请码
 ```bash
-# 开发模式
+node scripts/generate-invite-codes.js
+```
+
+### 5. 启动服务
+```bash
+# 开发模式（热重载）
 npm run dev
 
 # 生产模式
 npm start
+
+# 使用PM2（推荐生产环境）
+pm2 start app.js --name qimen-backend
 ```
+
+### 6. 健康检查
+```bash
+curl http://localhost:3001/health
+```
+
+## 📊 数据库模型
+
+### 核心模型
+
+#### User（用户）
+```prisma
+model User {
+  id          String   @id @default(uuid())
+  username    String   @unique
+  email       String   @unique
+  password    String
+  phone       String?  @unique
+  inviteCode  String
+  
+  profile     UserProfile?
+  points      UserPoints?
+  qimenRecords QimenRecord[]
+  favorites   QimenFavorite[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+```
+
+#### QimenRecord（历史记录）
+```prisma
+model QimenRecord {
+  id          String   @id @default(uuid())
+  userId      String
+  question    String
+  paipanData  String   // JSON
+  analysis    String   // AI分析结果
+  strategy    String   // 分析策略
+  tags        String?
+  
+  user        User     @relation
+  favorites   QimenFavorite[]
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId, createdAt])
+}
+```
+
+#### UserPoints（用户积分）
+```prisma
+model UserPoints {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  balance     Int      @default(1000)
+  totalEarned Int      @default(1000)
+  totalSpent  Int      @default(0)
+  
+  user        User     @relation
+  pointsRecords PointsRecord[]
+}
+```
+
+完整数据库schema请查看 `prisma/schema.prisma`
+
+## 🏗️ 架构设计
+
+### 三层架构
+
+```
+┌─────────────────────────────────────────┐
+│           HTTP Request                   │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  Controller Layer (HTTP处理)             │
+│  - 请求验证                              │
+│  - 响应格式化                            │
+│  - 错误处理                              │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  Service Layer (业务逻辑)                │
+│  - AuthService                           │
+│  - AIService (策略协调)                  │
+│  - PointsService                         │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  Utils Layer (工具函数)                  │
+│  - Response Formatter                    │
+│  - Error Handler                         │
+│  - Time Helper                           │
+│  - Paipan Helper                         │
+│  - Logger                                │
+└───────────────────────────────────────────┘
+```
+
+### AI分析策略模式
+
+```
+QimenAIService (协调器)
+    │
+    ├── SimpleAnalysis   # 快速分析
+    ├── DeepAnalysis     # 深度分析
+    ├── StreamAnalysis   # 流式分析
+    └── MasterAnalysis   # 大师解盘
+         │
+         └── BaseAnalysis  # 抽象基类
+              - parsePaipanData()
+              - cleanAiResponse()
+              - validateInput()
+```
+
+## 🔒 安全特性
+
+### 认证与授权
+- ✅ JWT令牌认证
+- ✅ bcrypt密码加密（12轮）
+- ✅ Token过期自动处理
+- ✅ 用户会话管理
+
+### API安全
+- ✅ Helmet安全头
+- ✅ CORS跨域保护
+- ✅ 输入数据验证（Joi schema）
+- ✅ SQL注入防护（Prisma ORM）
+- ✅ XSS防护
+
+### 限流保护
+- ✅ 全局限流: 100次/15分钟
+- ✅ 认证限流: 5次/15分钟
+- ✅ AI分析限流: 基于用户等级差异化
 
 ## 📈 性能优化
 
 ### 数据库优化
-- **索引优化**: 为常用查询字段添加复合索引
-- **分页查询**: 高效的offset-limit分页
-- **关联查询**: 优化的include查询
+- 索引优化（userId, createdAt复合索引）
+- 分页查询（高效offset-limit）
+- 关联查询优化（精准include）
 
-### API优化
-- **响应缓存**: 合理的缓存策略
-- **请求限流**: 防止API滥用
-- **数据压缩**: gzip压缩减少传输大小
+### 响应优化
+- gzip压缩
+- 响应缓存（适用场景）
+- 流式响应（AI分析）
 
-### 安全增强
-- **输入验证**: Joi schema验证
-- **SQL注入防护**: Prisma自动防护
-- **XSS防护**: Helmet安全头
-- **CORS配置**: 严格的跨域策略
+### 代码优化
+- 模块按需加载
+- 减少代码冗余（-60%~80%）
+- 异步操作优化
+
+## 📝 重构日志
+
+详细的重构变更记录请查看: [REFACTORING_CHANGELOG.md](./REFACTORING_CHANGELOG.md)
+
+**主要改进**:
+- ✅ AIService: 892行 → 173行 (-81%)
+- ✅ AuthController: 493行 → 162行 (-67%)
+- ✅ Middleware: 439行 → 97行 (-78%)
+- ✅ 新增5个AI策略类
+- ✅ 新增1个AuthService业务层
+- ✅ 新增7个validation模块
+- ✅ 新增6个middleware模块
+- ✅ 新增5个utils工具
 
 ## 🔧 开发指南
 
-### 添加新功能
-1. **数据模型**: 在 `prisma/schema.prisma` 中定义
-2. **API路由**: 在 `server.js` 中添加路由
-3. **验证逻辑**: 使用Joi进行输入验证
-4. **错误处理**: 统一的错误响应格式
-
-### 测试API
-```bash
-# 健康检查
-curl http://localhost:3001/health
-
-# 用户注册
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"test","email":"test@example.com","password":"123456"}'
+### 项目结构
+```
+apps/backend/
+├── src/
+│   ├── services/       # 业务逻辑
+│   ├── controllers/    # HTTP控制器
+│   ├── middleware/     # 中间件
+│   ├── validation/     # 数据验证
+│   ├── utils/         # 工具函数
+│   ├── routes/        # 路由配置
+│   ├── prompts/       # AI提示词
+│   ├── config/        # 配置管理
+│   └── database/      # 数据库初始化
+├── prisma/            # Prisma配置
+├── scripts/           # 脚本工具
+├── archive/           # 归档文件
+├── app.js            # 主应用入口
+└── package.json
 ```
 
-## 📝 更新日志
+### 添加新功能
+1. **数据模型**: 更新 `prisma/schema.prisma`
+2. **Service层**: 创建业务逻辑
+3. **Controller层**: 处理HTTP请求
+4. **Validation**: 定义验证规则
+5. **Route**: 配置路由
+6. **测试**: 编写测试用例
 
-### v2.1.0 (最新)
-- ✨ **新增**: 历史记录系统
-- ✨ **新增**: 收藏夹功能
-- 🔄 **优化**: AI流式分析自动保存
-- 🔄 **优化**: 数据库索引性能
-- 🔒 **增强**: API安全防护
+### 代码规范
+- ESLint规则遵循
+- 函数命名：驼峰命名法
+- 文件命名：驼峰命名法
+- 注释：JSDoc格式
+- 提交：Conventional Commits
 
-### v2.0.0
-- ✨ 完整用户认证系统
-- ✨ AI智能解盘功能
-- ✨ 积分系统
-- ✨ 流式响应支持
+## 🧪 测试
 
-## 🤝 贡献指南
+```bash
+# 运行所有测试
+npm test
 
-1. **代码规范**: 遵循ESLint配置
-2. **提交规范**: 使用Conventional Commits
-3. **测试要求**: 新功能需要相应测试
-4. **文档更新**: 同步更新API文档
+# 测试覆盖率
+npm run test:coverage
 
-## 📞 技术支持
+# API测试
+npm run test:api
+```
 
-- **Issues**: 在GitHub提出问题
-- **讨论**: 参与Discussion讨论
-- **邮件**: 发送至开发团队邮箱
+## 📦 部署
+
+### Docker部署
+```bash
+# 构建镜像
+docker build -t qimen-backend .
+
+# 运行容器
+docker run -d -p 3001:3001 \
+  --env-file config.prod.env \
+  qimen-backend
+```
+
+### PM2部署（推荐）
+```bash
+# 安装PM2
+npm install -g pm2
+
+# 启动应用
+pm2 start app.js --name qimen-backend
+
+# 查看日志
+pm2 logs qimen-backend
+
+# 监控
+pm2 monit
+```
+
+## 📞 支持与贡献
+
+### 问题反馈
+- GitHub Issues: 提交bug和建议
+- 邮件: dev@example.com
+
+### 贡献指南
+1. Fork本仓库
+2. 创建特性分支
+3. 提交更改
+4. 推送到分支
+5. 创建Pull Request
+
+## 📄 许可证
+
+MIT License
 
 ---
 
-*丁未奇门遁甲遁甲 - 传统智慧与现代技术的完美融合* 🔮 
+**🔮 传统智慧与现代技术的完美融合** | v2.5 重构版 | 2025
