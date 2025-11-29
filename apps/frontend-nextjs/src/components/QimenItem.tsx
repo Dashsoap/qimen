@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { showPalaceMeaning } from '@/lib/store/infoSlice';
 import Config from '@/lib/qimendunjia/config';
+import type { Bagua } from '@/types/qimen';
 import './QimenItem.css';
 
 interface QimenItemProps {
@@ -15,7 +16,7 @@ const QimenItem = forwardRef<any, QimenItemProps>(({ index }, ref) => {
   const dispatch = useDispatch();
   const { panData } = useSelector((state: RootState) => state.qimen);
 
-  const bagua = Config.gongs_code[index];
+  const bagua = Config.gongs_code[index as keyof typeof Config.gongs_code] as Bagua;
   const dizhi_pan: Record<string, string[]> = {
     '坎': ['子'],
     '艮': ['丑', '寅'],
@@ -27,12 +28,29 @@ const QimenItem = forwardRef<any, QimenItemProps>(({ index }, ref) => {
     '乾': ['戌', '亥']
   };
 
-  const getGongViewData = (bagua: string) => {
-    if (!panData || !panData.gongs) return {};
-    return panData.gongs.find((g: any) => g.name === bagua) || {};
+  /**
+   * 获取宫位视图数据（使用繁体字段）
+   * ⚠️ 修复：直接从 panData 读取繁体字段
+   */
+  const getGongViewData = (bagua: Bagua) => {
+    if (!panData || !panData.門) return {};
+    
+    return {
+      name: bagua,
+      八门: panData.門[bagua] || '',
+      八神: panData.神[bagua] || '',
+      九星: panData.星[bagua] || '',
+      天盘: panData.天盤?.[0]?.[bagua] || '',
+      天盘1: panData.天盤?.[1]?.[bagua] || '',
+      地盘: panData.地盤[bagua] || '',
+      暗干: panData.暗干[bagua] || '',
+      馬星: panData.馬星?.驛馬 || '',  // ⚠️ 使用繁体字段
+      地支: panData.地支?.[bagua] || [],
+      旬空: panData.旬空?.時空 || ''
+    };
   };
 
-  const viewData: any = getGongViewData(bagua);
+  const viewData = getGongViewData(bagua);
 
   const wuxingColor: Record<string, string> = {
     金: '#f28413',
@@ -75,14 +93,22 @@ const QimenItem = forwardRef<any, QimenItemProps>(({ index }, ref) => {
     "空亡宫": "空亡宫", "空亡": "空亡",
   };
 
-  const formatHorseInfo = (horseInfo: any) => {
-    const ma = horseInfo['马星'];
-    if (!ma || !dizhi_pan[bagua]) return '';
-    return dizhi_pan[bagua].includes(ma) ? '🐎' : '';
+  /**
+   * 格式化马星信息（使用繁体字段）
+   * ⚠️ 修复：从 馬星 读取驛馬
+   */
+  const formatHorseInfo = () => {
+    const yiMa = panData?.馬星?.驛馬;  // ⚠️ 使用繁体字段
+    if (!yiMa || !dizhi_pan[bagua]) return '';
+    return dizhi_pan[bagua].includes(yiMa) ? '🐎' : '';
   };
 
-  const getKongWang = (viewData: any) => {
-    const kongwang = viewData['旬空'];
+  /**
+   * 获取空亡信息（使用繁体字段）
+   * ⚠️ 修复：从 旬空.時空 读取
+   */
+  const getKongWang = () => {
+    const kongwang = panData?.旬空?.時空;  // ⚠️ 使用繁体字段
     if (!kongwang || !dizhi_pan[bagua]) return '';
     const kongwang_list = kongwang.split('');
     if (dizhi_pan[bagua].some(dizhi => kongwang_list.includes(dizhi))) {
@@ -244,13 +270,13 @@ const QimenItem = forwardRef<any, QimenItemProps>(({ index }, ref) => {
       </div>
       <div className="wrapper-item">
         <span className="placeholder">符</span>
-        {getKongWang(viewData) && (
+        {getKongWang() && (
           <span 
             className="kong-indicator clickable-element"
             style={{ fontSize: '18px', fontWeight: '700' }}
             onClick={(e) => showElementInfo('旬空', '旬空', e)}
           >
-            {getKongWang(viewData)}
+            {getKongWang()}
           </span>
         )}
         {viewData.地盘 && (
@@ -263,12 +289,12 @@ const QimenItem = forwardRef<any, QimenItemProps>(({ index }, ref) => {
           </span>
         )}
       </div>
-      {formatHorseInfo(viewData) && (
+      {formatHorseInfo() && (
         <span 
           className={`horse-indicator ${getHorseIndicatorPosition()}`}
-          onClick={(e) => showElementInfo('马星', '马星', e)}
+          onClick={(e) => showElementInfo('馬星', '馬星', e)}
         >
-          {formatHorseInfo(viewData)}
+          {formatHorseInfo()}
         </span>
       )}
     </div>

@@ -3,135 +3,39 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import './home.css';
+import { getRandomQuestionsFromEachCategory, type QuestionType } from '@/constants/questions';
+import { cn } from '@/lib/utils/cn';
 
 export default function HomePage() {
   const router = useRouter();
   const [questionInput, setQuestionInput] = useState('');
   const [questionItems, setQuestionItems] = useState<any[]>([]);
-  const [usedQuestionIndexes, setUsedQuestionIndexes] = useState<Record<string, number>>({});
-
-  // 问题分类数据库
-  const questionCategories: Record<string, any> = {
-    law: {
-      name: '官司诉讼',
-      icon: '/assets/img/home/官司诉讼.png',
-      value: 'law',
-      questions: [
-        '明天的官司能否胜诉？',
-        '这场诉讼的结果如何？',
-        '对方会主动和解吗？',
-        '律师费用能否追回？',
-        '证据是否足够有力？',
-        '何时能结束这场官司？'
-      ]
-    },
-    decision: {
-      name: '重大决策',
-      icon: '/assets/img/home/重大决策.png',
-      value: 'decision',
-      questions: [
-        '是否应该搬到新城市发展？',
-        '这个投资项目值得参与吗？',
-        '现在是买房的好时机吗？',
-        '应该选择哪个工作机会？',
-        '是否应该创业？',
-        '这个合作伙伴可靠吗？'
-      ]
-    },
-    career: {
-      name: '事业', 
-      icon: '/assets/img/home/事业.png',
-      value: 'career',
-      questions: [
-        '何时是跳槽的时机？',
-        '升职加薪的机会何时到来？',
-        '新项目能否成功？',
-        '同事关系如何改善？',
-        '职业转型是否明智？',
-        '创业项目前景如何？'
-      ]
-    },
-    health: {
-      name: '健康',
-      icon: '/assets/img/home/健康.png',
-      value: 'health',
-      questions: [
-        '这次手术的结果如何？',
-        '身体检查会有问题吗？',
-        '这个治疗方案有效吗？',
-        '何时能完全康复？',
-        '需要换医生吗？',
-        '家人的健康状况如何？'
-      ]
-    },
-    money: {
-      name: '财运',
-      icon: '/assets/img/home/财运.png',
-      value: 'money',
-      questions: [
-        '何时是出售股票的最佳时机？',
-        '这笔投资能否盈利？',
-        '财运何时好转？',
-        '债务何时能还清？',
-        '生意能否做大？',
-        '意外之财会降临吗？'
-      ]
-    },
-    love: {
-      name: '情感',
-      icon: '/assets/img/home/情感.png',
-      value: 'love',
-      questions: [
-        '这段感情是否有未来？',
-        '对方是否真心爱我？',
-        '何时能遇到真爱？',
-        '分手后还能复合吗？',
-        '婚姻生活会幸福吗？',
-        '暗恋的人对我有意思吗？'
-      ]
-    }
-  };
-
-  // 随机获取每个分类的一个问题（避免重复）
-  const getRandomQuestions = (avoidCurrent = false) => {
-    const categories = Object.keys(questionCategories);
-    return categories.map(categoryKey => {
-      const category = questionCategories[categoryKey];
-      let randomIndex;
-      
-      if (avoidCurrent && usedQuestionIndexes[categoryKey] !== undefined) {
-        const availableIndexes = category.questions
-          .map((_: any, index: number) => index)
-          .filter((index: number) => index !== usedQuestionIndexes[categoryKey]);
-        
-        randomIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
-      } else {
-        randomIndex = Math.floor(Math.random() * category.questions.length);
-      }
-      
-      setUsedQuestionIndexes(prev => ({
-        ...prev,
-        [categoryKey]: randomIndex
-      }));
-      
-      return {
-        text: category.questions[randomIndex],
-        icon: category.icon,
-        category: category.value,
-        categoryName: category.name
-      };
-    });
-  };
+  const [usedQuestionIndexes, setUsedQuestionIndexes] = useState<Record<QuestionType, number>>({} as Record<QuestionType, number>);
 
   // 初始化问题列表
   useEffect(() => {
-    setQuestionItems(getRandomQuestions());
+    const questions = getRandomQuestionsFromEachCategory();
+    setQuestionItems(questions);
+    
+    // 记录使用的索引
+    const indexes: Record<QuestionType, number> = {} as Record<QuestionType, number>;
+    questions.forEach((q, idx) => {
+      indexes[q.category] = idx;
+    });
+    setUsedQuestionIndexes(indexes);
   }, []);
 
   // 刷新问题列表
   const refreshQuestions = () => {
-    setQuestionItems(getRandomQuestions(true));
+    const questions = getRandomQuestionsFromEachCategory(usedQuestionIndexes);
+    setQuestionItems(questions);
+    
+    // 更新索引
+    const indexes: Record<QuestionType, number> = {} as Record<QuestionType, number>;
+    questions.forEach((q, idx) => {
+      indexes[q.category] = idx;
+    });
+    setUsedQuestionIndexes(indexes);
   };
 
   // 选择问题
@@ -143,22 +47,24 @@ export default function HomePage() {
   const handleSubmit = () => {
     if (!questionInput.trim()) return;
     
-    const selectedItem = questionItems.find(item => item.text === questionInput.trim());
-    
     router.push(`/qimen?question=${encodeURIComponent(questionInput.trim())}`);
   };
 
   return (
-    <div className="home-container">
-      <div className="main-content">
+    <div className="w-full relative bg-qimen-cream pb-20">
+      <div className="px-4 pt-6 max-w-md mx-auto">
         {/* 头部区域 */}
-        <div className="header-section">
-          <div className="header-left">
-            <h1 className="app-title">奇门遁甲</h1>
-            <p className="app-subtitle">问天地玄机，卜万事吉凶</p>
+        <div className="flex justify-between items-start mb-8">
+          <div className="flex-1">
+            <h1 className="font-serif font-bold text-3xl leading-tight text-qimen-brown mb-1">
+              奇门遁甲
+            </h1>
+            <p className="font-serif font-bold text-sm leading-tight text-qimen-brown">
+              问天地玄机，卜万事吉凶
+            </p>
           </div>
-          <div className="header-right">
-            <button className="history-btn">
+          <div className="flex items-center gap-4">
+            <button className="w-8 h-8 border-none bg-transparent flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <circle cx="10" cy="10" r="9" stroke="#753C15" strokeWidth="1.5"/>
                 <path d="M10 5v5l3 3" stroke="#753C15" strokeWidth="1.5" strokeLinecap="round"/>
@@ -168,19 +74,24 @@ export default function HomePage() {
         </div>
 
         {/* 问卜输入区域 */}
-        <div className="input-section">
-          <div className="input-card">
+        <div className="mb-10">
+          <div className="bg-white rounded-xl p-5 shadow-qimen">
             <textarea 
               value={questionInput}
               onChange={(e) => setQuestionInput(e.target.value)}
               placeholder="在这里写下你的困惑，奇门会给你答案"
-              className="question-textarea"
+              className="w-full min-h-[100px] border-none outline-none resize-none text-base leading-relaxed text-gray-900 placeholder:text-gray-400 placeholder:opacity-80"
               maxLength={200}
             />
-            <div className="input-footer">
-              <span className="char-count">{questionInput.length}/200</span>
+            <div className="flex justify-between items-center mt-5">
+              <span className="text-sm text-gray-400">{questionInput.length}/200</span>
               <button 
-                className="submit-btn"
+                className={cn(
+                  "bg-qimen-gold-dark border-none rounded-lg px-5 py-2.5 font-semibold text-sm text-white cursor-pointer transition-all duration-200",
+                  questionInput.trim() 
+                    ? "hover:bg-[#B8743E] hover:-translate-y-0.5" 
+                    : "opacity-50 cursor-not-allowed"
+                )}
                 onClick={handleSubmit}
                 disabled={!questionInput.trim()}
               >
@@ -191,10 +102,13 @@ export default function HomePage() {
         </div>
 
         {/* 猜你想问区域 */}
-        <div className="suggestions-section">
-          <div className="section-header">
-            <h2 className="section-title">猜你想问</h2>
-            <button className="refresh-btn" onClick={refreshQuestions}>
+        <div className="mb-10 relative bg-[url('/assets/img/home/bg.svg')] bg-contain bg-center bg-no-repeat rounded-2xl">
+          <div className="flex justify-between items-center mb-5 relative z-10">
+            <h2 className="font-semibold text-lg text-qimen-brown m-0">猜你想问</h2>
+            <button 
+              className="w-8 h-8 border border-gray-200 rounded-md bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-gray-50"
+              onClick={refreshQuestions}
+            >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M13.65 6.35A6.5 6.5 0 1 0 8 14.5" stroke="#999" strokeWidth="1.5" strokeLinecap="round"/>
                 <path d="M11 4l2.65 2.35L11 8.7" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -202,18 +116,18 @@ export default function HomePage() {
             </button>
           </div>
 
-          <div className="question-list">
+          <div className="flex flex-col gap-3 relative z-10">
             {questionItems.map((item, index) => (
               <div 
                 key={index}
-                className="question-item"
+                className="flex items-center px-3 py-3 bg-white/[0.01] border border-qimen-border-light rounded-xl cursor-pointer transition-all duration-200 w-4/5 shadow-sm hover:border-qimen-gold-dark hover:translate-x-0.5 hover:shadow-qimen-lg"
                 onClick={() => selectQuestion(item)}
               >
-                <div className="question-icon">
+                <div className="w-5 h-5 mr-3 flex-shrink-0 flex items-center justify-center">
                   <Image src={item.icon} alt={item.text} width={20} height={20} />
                 </div>
-                <span className="question-text">{item.text}</span>
-                <svg width="8" height="12" viewBox="0 0 8 12" fill="none" className="arrow-icon">
+                <span className="flex-1 text-sm text-qimen-brown leading-tight">{item.text}</span>
+                <svg width="8" height="12" viewBox="0 0 8 12" fill="none" className="ml-2 flex-shrink-0">
                   <path d="M2 2l4 4-4 4" stroke="#D3844E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>

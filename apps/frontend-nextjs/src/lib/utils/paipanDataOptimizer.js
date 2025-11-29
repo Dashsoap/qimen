@@ -1,17 +1,20 @@
 /**
- * 排盘数据优化工具
+ * 排盘数据优化工具（修复：使用繁体字段）
  * 将复杂的排盘数据转换为AI分析需要的核心信息
+ * 
+ * ⚠️ 重要：现在直接使用繁体字段（馬星.驛馬，而非 马星.驿马）
  */
 
 /**
  * 优化排盘数据格式，提取AI需要的核心信息
- * @param {Object} panData - 原始排盘数据
+ * ⚠️ 修复：适配繁体字段（馬星、門、星、神等）
+ * @param {Object} panData - 原始排盘数据（使用繁体字段）
  * @returns {Object} 优化后的排盘数据
  */
 export const optimizePaipanData = (panData) => {
   if (!panData) return null;
 
-  // 提取核心信息
+  // 提取核心信息（使用繁体字段）
   const optimizedData = {
     排局: panData.排局 || '',
     干支: panData.干支 || '',
@@ -20,24 +23,24 @@ export const optimizePaipanData = (panData) => {
     时间信息: {
       节气: panData.節氣 || '',
       旬空: panData.旬空 || {},
-      马星: panData.馬星 || {}
+      馬星: panData.馬星 || {}  // ⚠️ 使用繁体字
     }
   };
 
-  // 转换九宫格局数据
-  if (panData.gongs && Array.isArray(panData.gongs)) {
-    panData.gongs.forEach(gong => {
-      // 跳过中宫，因为它通常不参与奇门分析
-      if (gong.name !== '中') {
-        optimizedData.九宫格局[`${gong.name}宫`] = {
-          八门: gong.八门 || '',
-          九星: gong.九星 || '',
-          八神: gong.八神 || '',
-          天盘: gong.天盘 || '',
-          地盘: gong.地盘 || '',
-          暗干: gong.暗干 || ''
-        };
-      }
+  // 转换九宫格局数据（从原始数据结构）
+  // ⚠️ 修复：不再使用 panData.gongs 数组，直接从 panData.門/星/神 等字段读取
+  const gongs = ['坎', '艮', '震', '巽', '离', '坤', '兑', '乾'];  // 九宫（跳过中宫）
+  
+  if (panData.門) {
+    gongs.forEach(gongName => {
+      optimizedData.九宫格局[`${gongName}宫`] = {
+        八门: panData.門[gongName] || '',
+        九星: panData.星?.[gongName] || '',
+        八神: panData.神?.[gongName] || '',
+        天盘: panData.天盤?.[0]?.[gongName] || '',
+        地盘: panData.地盤?.[gongName] || '',
+        暗干: panData.暗干?.[gongName] || ''
+      };
     });
   }
 
@@ -161,8 +164,9 @@ export const assessDataQuality = (paipanData) => {
   }
 
   // 时间信息评分 (20分)
+  // ⚠️ 修复：使用繁体字段 馬星
   if (paipanData.时间信息) {
-    const timeFields = ['节气', '旬空', '马星'];
+    const timeFields = ['节气', '旬空', '馬星'];  // ⚠️ 使用繁体字
     const presentFields = timeFields.filter(field => paipanData.时间信息[field]);
     assessment.score += (presentFields.length / timeFields.length) * 20;
     assessment.details.push(`✓ 时间信息完整度: ${presentFields.length}/${timeFields.length}`);

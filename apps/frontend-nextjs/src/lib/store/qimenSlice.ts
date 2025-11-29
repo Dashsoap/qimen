@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { QimenPanData } from '@/types/qimen';
 
 // 辅助函数：安全地访问 localStorage
 const getStorageItem = (key: string): string | null => {
@@ -61,8 +62,12 @@ export const analyzeQimenResult = createAsyncThunk(
   }
 );
 
+/**
+ * Qimen Redux State
+ * ⚠️ panData 使用 QimenPanData 类型（繁体字段）
+ */
 interface QimenState {
-  panData: any | null;
+  panData: QimenPanData | null;  // ⚠️ 修复：使用正确的类型
   currentGame: any | null;
   history: any[];
   analysis: any | null;
@@ -107,7 +112,11 @@ const qimenSlice = createSlice({
   name: 'qimen',
   initialState,
   reducers: {
-    setPanData: (state, action: PayloadAction<any>) => {
+    /**
+     * 设置排盘数据
+     * ⚠️ 修复：接收 QimenPanData 类型（繁体字段）
+     */
+    setPanData: (state, action: PayloadAction<QimenPanData>) => {
       state.panData = action.payload;
     },
     clearPanData: (state) => {

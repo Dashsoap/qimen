@@ -9,77 +9,88 @@ import { showPalaceInfo } from '@/lib/store/infoSlice';
 import QimenItem from '@/components/QimenItem';
 import MeaningModal from '@/components/MeaningModal';
 import Qimen from '@/lib/qimendunjia';
-import Config from '@/lib/qimendunjia/config';
+import type { QimenPanData, GongViewData, Bagua } from '@/types/qimen';
 import './qimen.css';
 
 export default function QimenPage() {
   const dispatch = useDispatch();
   const { panData } = useSelector((state: RootState) => state.qimen);
 
-  // 起盘函数
+  /**
+   * 起盘函数（完全参考 Vue 实现）
+   * Paipan function (following Vue implementation)
+   * 
+   * ⚠️ 关键修复：直接使用 qimen.p，不进行任何数据转换
+   * 保留核心库输出的完整数据结构（繁体字段）
+   */
   const paipan = () => {
     const now = dayjs();
     try {
       const qimen = new Qimen(now.year(), now.month() + 1, now.date(), now.hour());
-      const data = qimen.p;
+      const data = qimen.p as QimenPanData;
       
-      const formattedData: any = {
-        ...data,
-        干支: `${data.干支1?.年}年 ${data.干支1?.月}月 ${data.干支1?.日}日 ${data.干支1?.時}时`,
-        節氣: data.節氣,
-        排局: data.排局,
-        旬空: data.旬空,
-        值符值使: data.值符值使,
-        gongs: []
-      };
-
-      const gongsCode = Config.gongs_code || {
-        '一': '坎', '二': '坤', '三': '震', '四': '巽', '五': '中',
-        '六': '乾', '七': '兑', '八': '艮', '九': '离'
-      };
-
-      for (const [index, gongName] of Object.entries(gongsCode)) {
-        const gongData = {
-          name: gongName,
-          index: index,
-          暗干: data.暗干?.[gongName] || '',
-          八神: data.神?.[gongName] || '',
-          九星: data.星?.[gongName] || '',
-          八门: data.門?.[gongName] || '',
-          天盘: data.天盤?.[0]?.[gongName] || '',
-          天盘1: data.天盤?.[1]?.[gongName] || '',
-          地盘: data.地盤?.[gongName] || '',
-          旬空: data.旬空?.時空 || '',
-          马星: data.马星?.驿马 || ''
-        };
-        formattedData.gongs.push(gongData);
-      }
-      
-      console.log('完整起盘数据:', formattedData);
-      dispatch(setPanData(formattedData));
-      return formattedData;
+      // 直接保存原始数据，不做任何转换（繁体字段）
+      dispatch(setPanData(data));
+      return data;
     } catch (error) {
-      console.error('起盘失败:', error);
+      console.error('❌ 起盘失败:', error);
       return null;
     }
   };
 
-  // 显示宫位信息
+  /**
+   * 获取宫位视图数据（参考 Vue Store 实现）
+   * Get palace view data (following Vue store implementation)
+   * 
+   * @param bagua - 八卦名称（如：坎、坤、震...）
+   * @returns 宫位显示数据
+   */
+  const getGongViewData = (bagua: Bagua): GongViewData | null => {
+    if (!panData || !panData.門) {
+      return null;
+    }
+
+    try {
+      return {
+        name: bagua,
+        八门: panData.門[bagua] || '',
+        八神: panData.神[bagua] || '',
+        九星: panData.星[bagua] || '',
+        八卦: bagua,
+        天盘: panData.天盤[0]?.[bagua] || '',
+        天盘1: panData.天盤[1]?.[bagua] || '',
+        地盘: panData.地盤[bagua] || '',
+        暗干: panData.暗干[bagua] || '',
+        馬星: panData.馬星?.驛馬 || '',  // ⚠️ 使用繁体字段
+        地支: panData.地支[bagua] || [],
+        旬空: panData.旬空?.時空 || ''    // ⚠️ 使用繁体字段
+      };
+    } catch (error) {
+      console.error(`获取宫位数据失败 [${bagua}]:`, error);
+      return null;
+    }
+  };
+
+  /**
+   * 显示宫位信息
+   * Show palace information
+   */
   const showPalaceInfoHandler = (palaceName: string) => {
-    const bagua = palaceName.replace('宫', '');
+    const bagua = palaceName.replace('宫', '') as Bagua;
+    const gongData = getGongViewData(bagua);
     
-    let gongData: any = {};
-    if (panData && panData.gongs) {
-      const gong = panData.gongs.find((g: any) => g.name === bagua);
-      if (gong) {
-        gongData = gong;
-      }
+    if (!gongData) {
+      console.warn(`宫位数据不存在: ${palaceName}`);
+      return;
     }
     
     let info = `${palaceName}信息：\n`;
     if (gongData.八神) info += `八神：${gongData.八神}\n`;
     if (gongData.九星) info += `九星：${gongData.九星}\n`;
     if (gongData.八门) info += `八门：${gongData.八门}\n`;
+    if (gongData.天盘) info += `天盘：${gongData.天盘}\n`;
+    if (gongData.地盘) info += `地盘：${gongData.地盘}\n`;
+    if (gongData.馬星) info += `馬星：${gongData.馬星}\n`;
     
     dispatch(showPalaceInfo({ palaceName, htmlContent: info }));
   };
